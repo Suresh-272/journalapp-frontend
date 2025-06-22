@@ -11,9 +11,10 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Link, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-// import axios from 'axios';
+import api from '../../utils/api'; // Axios instance
 
 export default function Login() {
   const [mobileno, setMobileno] = useState('+91');
@@ -22,51 +23,63 @@ export default function Login() {
   const router = useRouter();
 
   const handleLogin = async () => {
-    if (!mobileno || !password) {
+    // Validation
+    if (!mobileno || mobileno === '+91' || !password) {
       Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+
+    // Basic mobile number validation (adjust pattern as needed)
+    const mobilePattern = /^\+91[6-9]\d{9}$/;
+    if (!mobilePattern.test(mobileno)) {
+      Alert.alert('Error', 'Please enter a valid mobile number');
       return;
     }
 
     setIsLoading(true);
 
-    // Simulating API call since it's commented out
-    setTimeout(() => {
+    try {
+      const response = await api.post('/auth/login', {
+        mobileno: mobileno.trim(),
+        password: password.trim()
+      });
+
+      // Handle successful response
+      if (response.data.success && response.data.token) {
+        // Store token
+        await AsyncStorage.setItem('userToken', response.data.token);
+        
+        // Store user data if available
+        if (response.data.user) {
+          await AsyncStorage.setItem('userData', JSON.stringify(response.data.user));
+        }
+        
+        console.log('Login Success. Token saved.');
+        
+        // Navigate to main app
+        router.replace('/(tabs)');
+      } else {
+        Alert.alert('Login Failed', 'Invalid response from server');
+      }
+    } catch (error) {
+      console.error('Login Error:', error);
+      
+      let errorMessage = 'Something went wrong. Please try again.';
+      
+      if (error.response) {
+        // Server responded with error status
+        errorMessage = error.response.data?.error || 
+                     error.response.data?.message || 
+                     `Server error: ${error.response.status}`;
+      } else if (error.request) {
+        // Network error
+        errorMessage = 'Network error. Please check your connection.';
+      }
+      
+      Alert.alert('Login Failed', errorMessage);
+    } finally {
       setIsLoading(false);
-      // For demo purposes, navigate to tabs
-      router.replace('/(tabs)');
-    }, 1500);
-
-    // Uncomment this when ready to connect to backend
-    // try {
-    //   const response = await axios.post('http://172.20.10.5:3500/auth/login', {
-    //     mobileno,
-    //     password,
-    //   });
-
-    //   const { accessToken, user } = response.data;
-      
-    //   // Store token and user data
-    //   // TODO: Add proper token storage using secure storage
-      
-    //   Alert.alert('Success', 'Logged in successfully');
-
-    //   // Route based on userType
-    //   if (user.userType === 'farmer') {
-    //     router.replace('/(farmers)'); // Route to farmer screens
-    //   } else {
-    //     router.replace('/(tabs)'); // Route to buyer screens
-    //   }
-
-    // } catch (error) {
-    //   if (axios.isAxiosError(error) && error.response) {
-    //     Alert.alert('Error', error.response.data.message);
-    //   } else {
-    //     console.error('Error logging in:', error);
-    //     Alert.alert('Error', 'Failed to login. Please try again.');
-    //   }
-    // } finally {
-    //   setIsLoading(false);
-    // }
+    }
   };
 
   return (
@@ -81,10 +94,8 @@ export default function Login() {
             source={require('../../assets/images/logo-m2.jpg')}
             style={styles.logo}
           />
-          <Text style={styles.title}>Welcome to M</Text>
-          <Text style={styles.subtitle}>
-            Connect directly with local farmers and markets
-          </Text>
+          <Text style={styles.title}>Welcome to My Journal</Text>
+          <Text style={styles.subtitle}>Login to continue</Text>
         </View>
 
         <View style={styles.form}>
@@ -96,6 +107,7 @@ export default function Login() {
               value={mobileno}
               onChangeText={setMobileno}
               keyboardType="phone-pad"
+              maxLength={13} // +91 + 10 digits
             />
           </View>
 
@@ -137,7 +149,6 @@ export default function Login() {
     </KeyboardAvoidingView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,

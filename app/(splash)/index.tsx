@@ -40,8 +40,8 @@ export default function SplashScreen() {
         />
       </Animated.View>
       <Animated.View style={{ opacity: textOpacity }}>
-        <Text style={styles.text}>M</Text>
-        <Text style={styles.tagline}>Farm Fresh, Direct to You</Text>
+        {/* <Text style={styles.text}>M</Text> */}
+        <Text style={styles.tagline}>My journal app</Text>
       </Animated.View>
     </View>
   );

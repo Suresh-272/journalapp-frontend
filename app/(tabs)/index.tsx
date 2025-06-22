@@ -29,7 +29,7 @@ export default function HomeScreen() {
           style={styles.headerImage}
         />
       }>
-      <View style={styles.searchContainer}>
+      {/* <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <IconSymbol name="magnifyingglass" size={20} color="#7C7C7C" />
           <TextInput 
@@ -37,22 +37,22 @@ export default function HomeScreen() {
             style={styles.searchInput} 
           />
         </View>
-      </View>
+      </View> */}
 
       <ThemedView style={styles.welcomeContainer}>
         <ThemedText type="title">Welcome to M!</ThemedText>
-        <ThemedText style={styles.welcomeSubtitle}>Find fresh produce directly from farmers</ThemedText>
+        <ThemedText style={styles.welcomeSubtitle}>Memory Journal</ThemedText>
       </ThemedView>
 
-      <ThemedView style={styles.sectionContainer}>
+      {/* <ThemedView style={styles.sectionContainer}>
         <View style={styles.sectionHeader}>
           <ThemedText type="subtitle">Featured Products</ThemedText>
           <TouchableOpacity>
             <ThemedText style={styles.viewAllText}>View All</ThemedText>
           </TouchableOpacity>
-        </View>
+        </View> */}
         
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.productsScroll}>
+        {/* <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.productsScroll}>
           {featuredProducts.map(product => (
             <TouchableOpacity key={product.id} style={styles.productCard}>
               <Image source={product.image} style={styles.productImage} />
@@ -65,10 +65,10 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </TouchableOpacity>
           ))}
-        </ScrollView>
-      </ThemedView>
+        </ScrollView> */}
+      {/* </ThemedView> */}
 
-      <ThemedView style={styles.sectionContainer}>
+      {/* <ThemedView style={styles.sectionContainer}>
         <View style={styles.sectionHeader}>
           <ThemedText type="subtitle">Nearby Farmers</ThemedText>
           <TouchableOpacity>
@@ -86,15 +86,15 @@ export default function HomeScreen() {
             <IconSymbol name="chevron.right" size={20} color="#7C7C7C" />
           </TouchableOpacity>
         ))}
-      </ThemedView>
+      </ThemedView> */}
 
-      <ThemedView style={styles.sectionContainer}>
+      {/* <ThemedView style={styles.sectionContainer}>
         <ThemedText type="subtitle">Seasonal Highlights</ThemedText>
         <TouchableOpacity style={styles.seasonalBanner}>
           <ThemedText style={styles.seasonalText}>Summer Harvest Special</ThemedText>
           <ThemedText style={styles.seasonalSubtext}>Discover fresh summer produce</ThemedText>
         </TouchableOpacity>
-      </ThemedView>
+      </ThemedView> */}
     </ParallaxScrollView>
   );
 }

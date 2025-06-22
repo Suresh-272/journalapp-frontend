@@ -13,31 +13,37 @@ import {
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-// import axios from 'axios';
+import api from '../../utils/api'; // Axios instance
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [mobileno, setMobileno] = useState('+91');
-  const [userType, setUserType] = useState<'farmer' | 'buyer'>('buyer');
+  const [mobileno, setMobileno] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleRegister = async () => {
-    if (!name || !email || !password || !mobileno || !userType) {
-      Alert.alert('Error', 'Please fill in all fields');
+    const fullMobileNo = `+91${mobileno}`;
+
+    if (!name || !email || !password || mobileno.length !== 10) {
+      Alert.alert('Error', 'Please fill in all fields correctly');
       return;
     }
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       Alert.alert('Error', 'Please enter a valid email address');
       return;
     }
 
-    // Basic password validation (at least 6 characters)
+    const mobilePattern = /^\+91[6-9]\d{9}$/;
+    if (!mobilePattern.test(fullMobileNo)) {
+      Alert.alert('Error', 'Please enter a valid Indian mobile number');
+      return;
+    }
+
     if (password.length < 6) {
       Alert.alert('Error', 'Password must be at least 6 characters long');
       return;
@@ -45,45 +51,48 @@ export default function Register() {
 
     setIsLoading(true);
 
-    // Simulating API call since it's commented out
-    setTimeout(() => {
+    try {
+      const response = await api.post('/auth/register', {
+        name,
+        email,
+        mobileno: fullMobileNo,
+        password
+      });
+
+      if (response.data.success && response.data.token) {
+        const { token } = response.data;
+
+        await AsyncStorage.setItem('userToken', token);
+
+        if (response.data.user) {
+          await AsyncStorage.setItem('userData', JSON.stringify(response.data.user));
+        }
+
+        console.log('Registration successful');
+
+        Alert.alert('Success', 'Account created successfully', [
+          { text: 'OK', onPress: () => router.replace('/(tabs)') }
+        ]);
+      } else {
+        Alert.alert('Registration Failed', 'Invalid response from server');
+      }
+    } catch (error) {
+      console.error('Registration Error:', error);
+
+      let errorMessage = 'Something went wrong. Please try again.';
+
+      if (error?.response) {
+        errorMessage = error.response?.data?.error ||
+                       error.response?.data?.message ||
+                       `Server error: ${error.response.status}`;
+      } else if (error?.request) {
+        errorMessage = 'Network error. Please check your connection.';
+      }
+
+      Alert.alert('Registration Failed', errorMessage);
+    } finally {
       setIsLoading(false);
-      Alert.alert('Success', 'Account created successfully', [
-        { text: 'OK', onPress: () => router.replace('/(tabs)') }
-      ]);
-    }, 1500);
-
-    // Uncomment this when ready to connect to backend
-    // try {
-    //   const response = await axios.post('http://172.20.10.5:3500/auth/register', {
-    //     name,
-    //     email,
-    //     password,
-    //     mobileno,
-    //     userType,
-    //   });
-
-    //   Alert.alert('Success', response.data.message);
-    //   router.replace('/(tabs)');
-    // } catch (error) {
-    //   if (axios.isAxiosError(error)) {
-    //     if (error.code === 'ERR_NETWORK') {
-    //       Alert.alert(
-    //         'Network Error',
-    //         'Unable to connect to server. Please check your internet connection and try again.'
-    //       );
-    //     } else if (error.response) {
-    //       Alert.alert('Error', error.response.data.message);
-    //     } else {
-    //       Alert.alert('Error', 'An unexpected error occurred. Please try again.');
-    //     }
-    //   } else {
-    //     console.error('Error registering:', error);
-    //     Alert.alert('Error', 'Failed to register. Please try again.');
-    //   }
-    // } finally {
-    //   setIsLoading(false);
-    // }
+    }
   };
 
   return (
@@ -99,7 +108,7 @@ export default function Register() {
             style={styles.headerLogo}
           />
           <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join the agricultural marketplace</Text>
+          <Text style={styles.subtitle}>Join My Journal</Text>
         </View>
 
         <View style={styles.form}>
@@ -138,46 +147,19 @@ export default function Register() {
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Mobile Number</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your mobile number"
-              value={mobileno}
-              onChangeText={setMobileno}
-              keyboardType="phone-pad"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>I am a:</Text>
-            <View style={styles.userTypeContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.userTypeButton,
-                  userType === 'farmer' && styles.userTypeButtonActive,
-                ]}
-                onPress={() => setUserType('farmer')}>
-                <Text
-                  style={[
-                    styles.userTypeText,
-                    userType === 'farmer' && styles.userTypeTextActive,
-                  ]}>
-                  Farmer
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.userTypeButton,
-                  userType === 'buyer' && styles.userTypeButtonActive,
-                ]}
-                onPress={() => setUserType('buyer')}>
-                <Text
-                  style={[
-                    styles.userTypeText,
-                    userType === 'buyer' && styles.userTypeTextActive,
-                  ]}>
-                  Buyer
-                </Text>
-              </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ fontSize: 16, marginRight: 8 }}>+91</Text>
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                placeholder="Enter 10-digit number"
+                value={mobileno}
+                onChangeText={(text) => {
+                  const cleaned = text.replace(/[^0-9]/g, '').slice(0, 10);
+                  setMobileno(cleaned);
+                }}
+                keyboardType="phone-pad"
+                maxLength={10}
+              />
             </View>
           </View>
 
@@ -204,6 +186,7 @@ export default function Register() {
     </KeyboardAvoidingView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
