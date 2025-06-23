@@ -1,225 +1,261 @@
 import { Image } from 'expo-image';
-import { Platform, StyleSheet, TextInput, TouchableOpacity, View, Text, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { StyleSheet, FlatList, TouchableOpacity, View, Animated } from 'react-native';
 
-import ParallaxScrollView from '@/components/ParallaxScrollView';
+import { GlassCard } from '@/components/GlassCard';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
 
-export default function HomeScreen() {
-  // Sample data for featured products
-  const featuredProducts = [
-    { id: 1, name: 'Organic Tomatoes', price: '₹60/kg', image: require('@/assets/images/partial-react-logo.png') },
-    { id: 2, name: 'Fresh Carrots', price: '₹40/kg', image: require('@/assets/images/partial-react-logo.png') },
-    { id: 3, name: 'Green Spinach', price: '₹30/bunch', image: require('@/assets/images/partial-react-logo.png') },
-  ];
+// Sample journal entries for demonstration
+const sampleEntries = [
+  {
+    id: '1',
+    date: '2023-10-15',
+    title: 'Morning Reflections',
+    preview: 'Today I woke up feeling refreshed and ready to tackle the day...',
+    mood: 'happy',
+    hasPhoto: true,
+    hasAudio: false,
+    hasVideo: false,
+  },
+  {
+    id: '2',
+    date: '2023-10-14',
+    title: 'Evening Thoughts',
+    preview: 'As the day comes to a close, I find myself reflecting on...',
+    mood: 'thoughtful',
+    hasPhoto: false,
+    hasAudio: true,
+    hasVideo: false,
+  },
+  // Add more sample entries
+];
 
-  // Sample data for nearby farmers
-  const nearbyFarmers = [
-    { id: 1, name: 'Rajesh Kumar', distance: '2.5 km', image: require('@/assets/images/partial-react-logo.png') },
-    { id: 2, name: 'Anita Singh', distance: '3.8 km', image: require('@/assets/images/partial-react-logo.png') },
-  ];
+// Mood emoji mapping
+const moodEmojis = {
+  happy: '😊',
+  sad: '😢',
+  angry: '😠',
+  thoughtful: '🤔',
+  excited: '🎉',
+  calm: '😌',
+};
+
+export default function EntriesScreen() {
+  const colorScheme = useColorScheme();
+  const router = useRouter();
+  const [showFAB, setShowFAB] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const fabOpacity = new Animated.Value(1);
+
+  const handleScroll = (event) => {
+    const currentScrollY = event.nativeEvent.contentOffset.y;
+    
+    if (currentScrollY > lastScrollY && showFAB) {
+      // Scrolling down, hide FAB
+      setShowFAB(false);
+      Animated.timing(fabOpacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else if (currentScrollY < lastScrollY && !showFAB) {
+      // Scrolling up, show FAB
+      setShowFAB(true);
+      Animated.timing(fabOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+    
+    setLastScrollY(currentScrollY);
+  };
+
+  const renderJournalEntry = ({ item }) => {
+    const formattedDate = new Date(item.date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+
+    return (
+      <TouchableOpacity 
+        style={styles.entryContainer}
+        onPress={() => router.push(`/entry/${item.id}`)}
+        activeOpacity={0.8}
+      >
+        <GlassCard style={styles.entryCard}>
+          <View style={styles.entryHeader}>
+            <ThemedText type="journalTitle">{item.title}</ThemedText>
+            <ThemedText style={styles.dateText}>{formattedDate}</ThemedText>
+          </View>
+          
+          <ThemedText numberOfLines={2} style={styles.previewText}>
+            {item.preview}
+          </ThemedText>
+          
+          <View style={styles.entryFooter}>
+            <View style={styles.moodContainer}>
+              <ThemedText style={styles.moodEmoji}>
+                {moodEmojis[item.mood] || '😐'}
+              </ThemedText>
+            </View>
+            
+            <View style={styles.mediaIcons}>
+              {item.hasPhoto && (
+                <IconSymbol name="photo" size={18} color={Colors[colorScheme ?? 'light'].icon} />
+              )}
+              {item.hasAudio && (
+                <IconSymbol name="mic" size={18} color={Colors[colorScheme ?? 'light'].icon} />
+              )}
+              {item.hasVideo && (
+                <IconSymbol name="video" size={18} color={Colors[colorScheme ?? 'light'].icon} />
+              )}
+            </View>
+          </View>
+        </GlassCard>
+      </TouchableOpacity>
+    );
+  };
+
+  const handleAddEntry = () => {
+    router.push('/new-entry');
+  };
+
+  const handleInspireMe = () => {
+    // Show a random journal prompt
+    const prompts = [
+      "What secret dream do you carry but rarely speak about?",
+      "Describe a moment today that made you feel alive.",
+      "What's something you're grateful for right now?",
+      "If you could change one thing about your day, what would it be?",
+      "What's a small joy you experienced recently?"
+    ];
+    
+    const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
+    // Show prompt in a modal or navigate to new entry with this prompt
+  };
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.headerImage}
-        />
-      }>
-      {/* <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <IconSymbol name="magnifyingglass" size={20} color="#7C7C7C" />
-          <TextInput 
-            placeholder="Search for products or farmers" 
-            style={styles.searchInput} 
-          />
-        </View>
-      </View> */}
-
-      <ThemedView style={styles.welcomeContainer}>
-        <ThemedText type="title">Welcome to M!</ThemedText>
-        <ThemedText style={styles.welcomeSubtitle}>Memory Journal</ThemedText>
-      </ThemedView>
-
-      {/* <ThemedView style={styles.sectionContainer}>
-        <View style={styles.sectionHeader}>
-          <ThemedText type="subtitle">Featured Products</ThemedText>
-          <TouchableOpacity>
-            <ThemedText style={styles.viewAllText}>View All</ThemedText>
-          </TouchableOpacity>
-        </View> */}
-        
-        {/* <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.productsScroll}>
-          {featuredProducts.map(product => (
-            <TouchableOpacity key={product.id} style={styles.productCard}>
-              <Image source={product.image} style={styles.productImage} />
-              <View style={styles.productInfo}>
-                <ThemedText style={styles.productName}>{product.name}</ThemedText>
-                <ThemedText style={styles.productPrice}>{product.price}</ThemedText>
-              </View>
-              <TouchableOpacity style={styles.addButton}>
-                <IconSymbol name="plus" size={16} color="#FFFFFF" />
-              </TouchableOpacity>
-            </TouchableOpacity>
-          ))}
-        </ScrollView> */}
-      {/* </ThemedView> */}
-
-      {/* <ThemedView style={styles.sectionContainer}>
-        <View style={styles.sectionHeader}>
-          <ThemedText type="subtitle">Nearby Farmers</ThemedText>
-          <TouchableOpacity>
-            <ThemedText style={styles.viewAllText}>View All</ThemedText>
-          </TouchableOpacity>
-        </View>
-        
-        {nearbyFarmers.map(farmer => (
-          <TouchableOpacity key={farmer.id} style={styles.farmerCard}>
-            <Image source={farmer.image} style={styles.farmerImage} />
-            <View style={styles.farmerInfo}>
-              <ThemedText style={styles.farmerName}>{farmer.name}</ThemedText>
-              <ThemedText style={styles.farmerDistance}>{farmer.distance}</ThemedText>
-            </View>
-            <IconSymbol name="chevron.right" size={20} color="#7C7C7C" />
-          </TouchableOpacity>
-        ))}
-      </ThemedView> */}
-
-      {/* <ThemedView style={styles.sectionContainer}>
-        <ThemedText type="subtitle">Seasonal Highlights</ThemedText>
-        <TouchableOpacity style={styles.seasonalBanner}>
-          <ThemedText style={styles.seasonalText}>Summer Harvest Special</ThemedText>
-          <ThemedText style={styles.seasonalSubtext}>Discover fresh summer produce</ThemedText>
+    <ThemedView style={styles.container}>
+      <View style={styles.header}>
+        <ThemedText type="title">My Journal</ThemedText>
+        <TouchableOpacity 
+          style={styles.inspireButton}
+          onPress={handleInspireMe}
+        >
+          <ThemedText style={styles.inspireButtonText}>Inspire Me</ThemedText>
         </TouchableOpacity>
-      </ThemedView> */}
-    </ParallaxScrollView>
+      </View>
+      
+      <FlatList
+        data={sampleEntries}
+        renderItem={renderJournalEntry}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContainer}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      />
+      
+      <Animated.View style={[styles.fabContainer, { opacity: fabOpacity }]}>
+        <TouchableOpacity 
+          style={styles.fab}
+          onPress={handleAddEntry}
+          activeOpacity={0.8}
+        >
+          <IconSymbol name="plus" size={24} color="#fff" />
+        </TouchableOpacity>
+      </Animated.View>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-  searchContainer: {
-    marginBottom: 15,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F2F3F2',
-    borderRadius: 15,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-  },
-  searchInput: {
+  container: {
     flex: 1,
-    marginLeft: 10,
-    fontSize: 16,
+    paddingTop: 60,
   },
-  welcomeContainer: {
-    marginBottom: 20,
-  },
-  welcomeSubtitle: {
-    color: '#7C7C7C',
-    marginTop: 5,
-  },
-  sectionContainer: {
-    marginBottom: 25,
-  },
-  sectionHeader: {
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    paddingHorizontal: 20,
+    marginBottom: 20,
   },
-  viewAllText: {
-    color: '#53B175',
-    fontWeight: '500',
+  inspireButton: {
+    backgroundColor: '#f7c5a8',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
-  productsScroll: {
-    marginLeft: -5,
-  },
-  productCard: {
-    width: 150,
-    marginHorizontal: 5,
-    backgroundColor: '#F2F3F2',
-    borderRadius: 15,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  productImage: {
-    width: '100%',
-    height: 120,
-    backgroundColor: '#E5E5E5',
-  },
-  productInfo: {
-    padding: 10,
-  },
-  productName: {
-    fontWeight: '500',
-    marginBottom: 5,
-  },
-  productPrice: {
-    color: '#53B175',
+  inspireButtonText: {
+    color: '#4b3621',
     fontWeight: '600',
   },
-  addButton: {
-    position: 'absolute',
-    bottom: 10,
-    right: 10,
-    backgroundColor: '#53B175',
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+  listContainer: {
+    padding: 16,
+  },
+  entryContainer: {
+    marginBottom: 16,
+  },
+  entryCard: {
+    borderRadius: 16,
+  },
+  entryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  dateText: {
+    fontSize: 14,
+    opacity: 0.7,
+  },
+  previewText: {
+    marginBottom: 12,
+  },
+  entryFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  moodContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 228, 225, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  farmerCard: {
+  moodEmoji: {
+    fontSize: 20,
+  },
+  mediaIcons: {
     flexDirection: 'row',
+    gap: 8,
+  },
+  fabContainer: {
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+  },
+  fab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#f7c5a8',
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F2F3F2',
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 10,
-  },
-  farmerImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#E5E5E5',
-  },
-  farmerInfo: {
-    flex: 1,
-    marginLeft: 15,
-  },
-  farmerName: {
-    fontWeight: '500',
-    marginBottom: 5,
-  },
-  farmerDistance: {
-    color: '#7C7C7C',
-    fontSize: 14,
-  },
-  seasonalBanner: {
-    backgroundColor: '#A1CEDC',
-    borderRadius: 15,
-    padding: 20,
-  },
-  seasonalText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  seasonalSubtext: {
-    color: '#FFFFFF',
-    fontSize: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 });

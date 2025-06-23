@@ -29,8 +29,8 @@ export default function ProfileScreen() {
           style={styles.profileImage}
         />
         <View style={styles.profileInfo}>
-          <ThemedText style={styles.profileName}>Rahul Sharma</ThemedText>
-          <ThemedText style={styles.profileEmail}>rahul.sharma@example.com</ThemedText>
+          <ThemedText style={styles.profileName}>Shreya</ThemedText>
+          <ThemedText style={styles.profileEmail}>shreya@example.com</ThemedText>
           <TouchableOpacity style={styles.editButton}>
             <ThemedText style={styles.editButtonText}>Edit Profile</ThemedText>
           </TouchableOpacity>

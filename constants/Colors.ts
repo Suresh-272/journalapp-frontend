@@ -1,26 +1,35 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Journal app color theme
+ * Warm, cozy colors with light and dark mode support
  */
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
+const primaryBrown = '#4b3621';
+const warmBeige = '#f5efe7';
+const peachAccent = '#f7c5a8';
+const pastelPink = '#ffe4e1';
+const pastelBlue = '#cfe2f3';
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    text: primaryBrown,
+    background: warmBeige,
+    tint: peachAccent,
+    icon: primaryBrown,
+    tabIconDefault: '#8a7866',
+    tabIconSelected: peachAccent,
+    pastelPink: pastelPink,
+    pastelBlue: pastelBlue,
+    cardBackground: 'rgba(255, 255, 255, 0.7)',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    text: '#f5efe7',
+    background: '#2d2418',
+    tint: peachAccent,
+    icon: '#f5efe7',
+    tabIconDefault: '#a99d8f',
+    tabIconSelected: peachAccent,
+    pastelPink: '#d4b5b0',
+    pastelBlue: '#8ca7c4',
+    cardBackground: 'rgba(40, 40, 40, 0.7)',
   },
 };
