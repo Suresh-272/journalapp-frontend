@@ -45,6 +45,21 @@ const moodEmojis = {
   calm: '😌',
 };
 
+// Warm color theme inspired by the realtor website
+const WarmColors = {
+  primary: '#B8956A', // Warm brown from the website
+  secondary: '#8B6F47', // Darker brown
+  accent: '#D4B896', // Light tan
+  background: '#F5F0E8', // Cream background
+  cardBackground: '#FFFFFF', // White for cards
+  textPrimary: '#3D2914', // Dark brown for text
+  textSecondary: '#6B5B4F', // Medium brown for secondary text
+  textMuted: '#9B8A7A', // Muted brown
+  shadow: '#8B6F47', // Brown shadow
+  buttonText: '#FFFFFF',
+  moodBackground: 'rgba(212, 185, 150, 0.3)', // Light tan with opacity
+};
+
 export default function EntriesScreen() {
   const colorScheme = useColorScheme();
   const router = useRouter();
@@ -91,7 +106,9 @@ export default function EntriesScreen() {
       >
         <GlassCard style={styles.entryCard}>
           <View style={styles.entryHeader}>
-            <ThemedText type="journalTitle">{item.title}</ThemedText>
+            <ThemedText type="journalTitle" style={styles.titleText}>
+              {item.title}
+            </ThemedText>
             <ThemedText style={styles.dateText}>{formattedDate}</ThemedText>
           </View>
           
@@ -108,13 +125,13 @@ export default function EntriesScreen() {
             
             <View style={styles.mediaIcons}>
               {item.hasPhoto && (
-                <IconSymbol name="photo" size={18} color={Colors[colorScheme ?? 'light'].icon} />
+                <IconSymbol name="photo" size={18} color={WarmColors.secondary} />
               )}
               {item.hasAudio && (
-                <IconSymbol name="mic" size={18} color={Colors[colorScheme ?? 'light'].icon} />
+                <IconSymbol name="mic" size={18} color={WarmColors.secondary} />
               )}
               {item.hasVideo && (
-                <IconSymbol name="video" size={18} color={Colors[colorScheme ?? 'light'].icon} />
+                <IconSymbol name="video" size={18} color={WarmColors.secondary} />
               )}
             </View>
           </View>
@@ -144,7 +161,7 @@ export default function EntriesScreen() {
   return (
     <ThemedView style={styles.container}>
       <View style={styles.header}>
-        <ThemedText type="title">My Journal</ThemedText>
+        <ThemedText type="title" style={styles.headerTitle}>My Journal</ThemedText>
         <TouchableOpacity 
           style={styles.inspireButton}
           onPress={handleInspireMe}
@@ -169,7 +186,7 @@ export default function EntriesScreen() {
           onPress={handleAddEntry}
           activeOpacity={0.8}
         >
-          <IconSymbol name="plus" size={24} color="#fff" />
+          <IconSymbol name="plus" size={24} color={WarmColors.buttonText} />
         </TouchableOpacity>
       </Animated.View>
     </ThemedView>
@@ -180,6 +197,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 60,
+    backgroundColor: WarmColors.background,
   },
   header: {
     flexDirection: 'row',
@@ -188,15 +206,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 20,
   },
+  headerTitle: {
+    color: WarmColors.textPrimary,
+    fontWeight: '700',
+    fontSize: 28,
+  },
   inspireButton: {
-    backgroundColor: '#f7c5a8',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    backgroundColor: WarmColors.primary,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 25,
+    shadowColor: WarmColors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
   },
   inspireButtonText: {
-    color: '#4b3621',
+    color: WarmColors.buttonText,
     fontWeight: '600',
+    fontSize: 14,
   },
   listContainer: {
     padding: 16,
@@ -206,6 +235,14 @@ const styles = StyleSheet.create({
   },
   entryCard: {
     borderRadius: 16,
+    backgroundColor: WarmColors.cardBackground,
+    shadowColor: WarmColors.shadow,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(184, 149, 106, 0.1)',
   },
   entryHeader: {
     flexDirection: 'row',
@@ -213,12 +250,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  titleText: {
+    color: WarmColors.textPrimary,
+    fontWeight: '600',
+    fontSize: 18,
+  },
   dateText: {
     fontSize: 14,
-    opacity: 0.7,
+    color: WarmColors.textMuted,
+    fontWeight: '500',
   },
   previewText: {
     marginBottom: 12,
+    color: WarmColors.textSecondary,
+    fontSize: 15,
+    lineHeight: 20,
   },
   entryFooter: {
     flexDirection: 'row',
@@ -229,16 +275,18 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: 'rgba(255, 228, 225, 0.5)',
+    backgroundColor: WarmColors.moodBackground,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(184, 149, 106, 0.2)',
   },
   moodEmoji: {
     fontSize: 20,
   },
   mediaIcons: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
   fabContainer: {
     position: 'absolute',
@@ -249,13 +297,13 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#f7c5a8',
+    backgroundColor: WarmColors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: WarmColors.shadow,
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowRadius: 6,
+    elevation: 8,
   },
 });

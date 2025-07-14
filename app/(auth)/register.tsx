@@ -108,7 +108,7 @@ export default function Register() {
             style={styles.headerLogo}
           />
           <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join My Journal</Text>
+          <Text style={styles.subtitle}>Join Daily Muse</Text>
         </View>
 
         <View style={styles.form}>
@@ -117,6 +117,7 @@ export default function Register() {
             <TextInput
               style={styles.input}
               placeholder="Enter your full name"
+              placeholderTextColor="#8B7355"
               value={name}
               onChangeText={setName}
             />
@@ -127,6 +128,7 @@ export default function Register() {
             <TextInput
               style={styles.input}
               placeholder="Enter your email"
+              placeholderTextColor="#8B7355"
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -139,6 +141,7 @@ export default function Register() {
             <TextInput
               style={styles.input}
               placeholder="Create a password"
+              placeholderTextColor="#8B7355"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -147,11 +150,12 @@ export default function Register() {
 
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Mobile Number</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ fontSize: 16, marginRight: 8 }}>+91</Text>
+            <View style={styles.phoneContainer}>
+              <Text style={styles.countryCode}>+91</Text>
               <TextInput
-                style={[styles.input, { flex: 1 }]}
+                style={[styles.input, styles.phoneInput]}
                 placeholder="Enter 10-digit number"
+                placeholderTextColor="#8B7355"
                 value={mobileno}
                 onChangeText={(text) => {
                   const cleaned = text.replace(/[^0-9]/g, '').slice(0, 10);
@@ -187,11 +191,10 @@ export default function Register() {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FCFCFC',
+    backgroundColor: '#F5F0E8', // Warm cream/beige background matching Squarespace
     padding: 20,
   },
   header: {
@@ -204,16 +207,26 @@ const styles = StyleSheet.create({
     height: 70,
     borderRadius: 35,
     marginBottom: 15,
+    // Warm brown shadow
+    shadowColor: '#B8956A',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   title: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#181725',
+    color: '#3D3D3D', // Dark text on light background
     marginBottom: 10,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: '#7C7C7C',
+    color: '#6B5B4F', // Medium brown text
     textAlign: 'center',
   },
   form: {
@@ -224,50 +237,74 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    color: '#181725',
+    color: '#3D3D3D', // Dark label text
     marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#F2F3F2',
-    borderRadius: 15,
-    padding: 15,
-    fontSize: 16,
-    color: '#181725',
-  },
-  userTypeContainer: {
-    flexDirection: 'row',
-    gap: 15,
-  },
-  userTypeButton: {
-    flex: 1,
-    backgroundColor: '#F2F3F2',
-    borderRadius: 15,
-    padding: 15,
-    alignItems: 'center',
-  },
-  userTypeButtonActive: {
-    backgroundColor: '#53B175',
-  },
-  userTypeText: {
-    fontSize: 16,
-    color: '#181725',
     fontWeight: '500',
   },
-  userTypeTextActive: {
-    color: '#FFF',
+  input: {
+    backgroundColor: '#FFFFFF', // White input background
+    borderRadius: 15,
+    padding: 18,
+    fontSize: 16,
+    color: '#3D3D3D', // Dark input text
+    borderWidth: 1,
+    borderColor: '#D4C4B0', // Light brown border
+    shadowColor: '#B8956A',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  phoneContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  countryCode: {
+    fontSize: 16,
+    color: '#3D3D3D', // Dark text matching input
+    fontWeight: '500',
+    backgroundColor: '#FFFFFF',
+    padding: 18,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#D4C4B0',
+    shadowColor: '#B8956A',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  phoneInput: {
+    flex: 1,
   },
   button: {
-    backgroundColor: '#53B175',
+    backgroundColor: '#B8956A', // Warm brown button color matching Squarespace
     borderRadius: 15,
     padding: 18,
     alignItems: 'center',
     marginTop: 20,
+    shadowColor: '#B8956A',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonDisabled: {
-    backgroundColor: '#A8E4BD',
+    backgroundColor: '#D4C4B0', // Lighter brown when disabled
+    opacity: 0.7,
   },
   buttonText: {
-    color: '#FFF',
+    color: '#FFFFFF', // White text on brown button
     fontSize: 18,
     fontWeight: '600',
   },
@@ -278,11 +315,11 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   footerText: {
-    color: '#7C7C7C',
+    color: '#6B5B4F', // Medium brown text
     fontSize: 16,
   },
   footerLink: {
-    color: '#53B175',
+    color: '#B8956A', // Warm brown link color
     fontSize: 16,
     fontWeight: '600',
   },

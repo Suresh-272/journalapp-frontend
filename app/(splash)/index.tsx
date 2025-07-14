@@ -41,7 +41,7 @@ export default function SplashScreen() {
       </Animated.View>
       <Animated.View style={{ opacity: textOpacity }}>
         {/* <Text style={styles.text}>M</Text> */}
-        <Text style={styles.tagline}>My journal app</Text>
+        <Text style={styles.tagline}>Log it, Love it, Relive it</Text>
       </Animated.View>
     </View>
   );
@@ -50,7 +50,7 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FCFCFC',
+    backgroundColor: '#F5F0E8', // Warm cream/beige background like Squarespace
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -59,17 +59,28 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 100,
     marginBottom: 20,
+    // Warm brown shadow to match the theme
+    shadowColor: '#B8956A',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
   },
   text: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#53B175',
+    color: '#B8956A', // Warm brown/tan color matching Squarespace buttons
     textAlign: 'center',
   },
   tagline: {
-    fontSize: 16,
-    color: '#7C7C7C',
+    fontSize: 18,
+    color: '#6B5B4F', // Darker brown for better readability on light background
     textAlign: 'center',
     marginTop: 8,
+    fontWeight: '400',
+    letterSpacing: 0.5,
   },
 });

@@ -1,421 +1,440 @@
-import { useRouter } from 'expo-router';
-import * as Location from 'expo-location';
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
-import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
+// import { useRouter } from 'expo-router';
+// import * as Location from 'expo-location';
+// import React, { useState, useEffect, useRef } from 'react';
+// import { StyleSheet, View, TouchableOpacity, ActivityIndicator, Platform, Animated } from 'react-native';
+// import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 
-import { GlassCard } from '@/components/GlassCard';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+// import { GlassCard } from '@/components/GlassCard';
+// import { ThemedText } from '@/components/ThemedText';
+// import { ThemedView } from '@/components/ThemedView';
+// import { Colors } from '@/constants/Colors';
+// import { useColorScheme } from '@/hooks/useColorScheme';
+// import { FontAwesome } from '@expo/vector-icons';
 
-// Sample geotagged entries for demonstration
-const sampleEntries = [
-  {
-    id: '1',
-    title: 'Morning Reflections',
-    preview: 'Today I woke up feeling refreshed...',
-    date: '2023-10-15',
-    location: {
-      latitude: 40.7128,
-      longitude: -74.0060,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
-    },
-  },
-  {
-    id: '2',
-    title: 'Central Park Walk',
-    preview: 'Spent the afternoon walking through...',
-    date: '2023-10-14',
-    location: {
-      latitude: 40.7829,
-      longitude: -73.9654,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
-    },
-  },
-  {
-    id: '3',
-    title: 'Brooklyn Bridge',
-    preview: 'Crossed the Brooklyn Bridge today...',
-    date: '2023-10-13',
-    location: {
-      latitude: 40.7061,
-      longitude: -73.9969,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
-    },
-  },
-];
+// // Sample geotagged entries for demonstration
+// const sampleEntries = [
+//   {
+//     id: '1',
+//     title: 'Morning Reflections',
+//     preview: 'Today I woke up feeling refreshed...',
+//     date: '2023-10-15',
+//     location: {
+//       latitude: 37.7749,
+//       longitude: -122.4194,
+//     },
+//   },
+//   {
+//     id: '2',
+//     title: 'Beach Day',
+//     preview: 'Spent the afternoon at the beach...',
+//     date: '2023-10-14',
+//     location: {
+//       latitude: 37.7833,
+//       longitude: -122.4324,
+//     },
+//   },
+//   {
+//     id: '3',
+//     title: 'Coffee Shop Thoughts',
+//     preview: 'Found a cozy new coffee shop...',
+//     date: '2023-10-10',
+//     location: {
+//       latitude: 37.7694,
+//       longitude: -122.4094,
+//     },
+//   },
+//   {
+//     id: '4',
+//     title: 'Park Meditation',
+//     preview: 'Spent an hour meditating in the park...',
+//     date: '2023-10-05',
+//     location: {
+//       latitude: 37.7699,
+//       longitude: -122.4294,
+//     },
+//   },
+// ];
 
-// Custom map style for dark mode
-const darkMapStyle = [
-  {
-    elementType: 'geometry',
-    stylers: [
-      {
-        color: '#242f3e',
-      },
-    ],
-  },
-  {
-    elementType: 'labels.text.fill',
-    stylers: [
-      {
-        color: '#746855',
-      },
-    ],
-  },
-  {
-    elementType: 'labels.text.stroke',
-    stylers: [
-      {
-        color: '#242f3e',
-      },
-    ],
-  },
-  {
-    featureType: 'administrative.locality',
-    elementType: 'labels.text.fill',
-    stylers: [
-      {
-        color: '#d59563',
-      },
-    ],
-  },
-  {
-    featureType: 'poi',
-    elementType: 'labels.text.fill',
-    stylers: [
-      {
-        color: '#d59563',
-      },
-    ],
-  },
-  {
-    featureType: 'poi.park',
-    elementType: 'geometry',
-    stylers: [
-      {
-        color: '#263c3f',
-      },
-    ],
-  },
-  {
-    featureType: 'poi.park',
-    elementType: 'labels.text.fill',
-    stylers: [
-      {
-        color: '#6b9a76',
-      },
-    ],
-  },
-  {
-    featureType: 'road',
-    elementType: 'geometry',
-    stylers: [
-      {
-        color: '#38414e',
-      },
-    ],
-  },
-  {
-    featureType: 'road',
-    elementType: 'geometry.stroke',
-    stylers: [
-      {
-        color: '#212a37',
-      },
-    ],
-  },
-  {
-    featureType: 'road',
-    elementType: 'labels.text.fill',
-    stylers: [
-      {
-        color: '#9ca5b3',
-      },
-    ],
-  },
-  {
-    featureType: 'road.highway',
-    elementType: 'geometry',
-    stylers: [
-      {
-        color: '#746855',
-      },
-    ],
-  },
-  {
-    featureType: 'road.highway',
-    elementType: 'geometry.stroke',
-    stylers: [
-      {
-        color: '#1f2835',
-      },
-    ],
-  },
-  {
-    featureType: 'road.highway',
-    elementType: 'labels.text.fill',
-    stylers: [
-      {
-        color: '#f3d19c',
-      },
-    ],
-  },
-  {
-    featureType: 'transit',
-    elementType: 'geometry',
-    stylers: [
-      {
-        color: '#2f3948',
-      },
-    ],
-  },
-  {
-    featureType: 'transit.station',
-    elementType: 'labels.text.fill',
-    stylers: [
-      {
-        color: '#d59563',
-      },
-    ],
-  },
-  {
-    featureType: 'water',
-    elementType: 'geometry',
-    stylers: [
-      {
-        color: '#17263c',
-      },
-    ],
-  },
-  {
-    featureType: 'water',
-    elementType: 'labels.text.fill',
-    stylers: [
-      {
-        color: '#515c6d',
-      },
-    ],
-  },
-  {
-    featureType: 'water',
-    elementType: 'labels.text.stroke',
-    stylers: [
-      {
-        color: '#17263c',
-      },
-    ],
-  },
-];
+// // Custom map style for a warm, beige theme
+// const mapStyle = [
+//   {
+//     "elementType": "geometry",
+//     "stylers": [
+//       {
+//         "color": "#f5f5f5"
+//       }
+//     ]
+//   },
+//   {
+//     "elementType": "labels.icon",
+//     "stylers": [
+//       {
+//         "visibility": "off"
+//       }
+//     ]
+//   },
+//   {
+//     "elementType": "labels.text.fill",
+//     "stylers": [
+//       {
+//         "color": "#616161"
+//       }
+//     ]
+//   },
+//   {
+//     "elementType": "labels.text.stroke",
+//     "stylers": [
+//       {
+//         "color": "#f5f5f5"
+//       }
+//     ]
+//   },
+//   {
+//     "featureType": "administrative.land_parcel",
+//     "elementType": "labels.text.fill",
+//     "stylers": [
+//       {
+//         "color": "#bdbdbd"
+//       }
+//     ]
+//   },
+//   {
+//     "featureType": "poi",
+//     "elementType": "geometry",
+//     "stylers": [
+//       {
+//         "color": "#eeeeee"
+//       }
+//     ]
+//   },
+//   {
+//     "featureType": "poi",
+//     "elementType": "labels.text.fill",
+//     "stylers": [
+//       {
+//         "color": "#757575"
+//       }
+//     ]
+//   },
+//   {
+//     "featureType": "poi.park",
+//     "elementType": "geometry",
+//     "stylers": [
+//       {
+//         "color": "#e5e5e5"
+//       }
+//     ]
+//   },
+//   {
+//     "featureType": "poi.park",
+//     "elementType": "labels.text.fill",
+//     "stylers": [
+//       {
+//         "color": "#9e9e9e"
+//       }
+//     ]
+//   },
+//   {
+//     "featureType": "road",
+//     "elementType": "geometry",
+//     "stylers": [
+//       {
+//         "color": "#ffffff"
+//       }
+//     ]
+//   },
+//   {
+//     "featureType": "road.arterial",
+//     "elementType": "labels.text.fill",
+//     "stylers": [
+//       {
+//         "color": "#757575"
+//       }
+//     ]
+//   },
+//   {
+//     "featureType": "road.highway",
+//     "elementType": "geometry",
+//     "stylers": [
+//       {
+//         "color": "#dadada"
+//       }
+//     ]
+//   },
+//   {
+//     "featureType": "road.highway",
+//     "elementType": "labels.text.fill",
+//     "stylers": [
+//       {
+//         "color": "#616161"
+//       }
+//     ]
+//   },
+//   {
+//     "featureType": "road.local",
+//     "elementType": "labels.text.fill",
+//     "stylers": [
+//       {
+//         "color": "#9e9e9e"
+//       }
+//     ]
+//   },
+//   {
+//     "featureType": "transit.line",
+//     "elementType": "geometry",
+//     "stylers": [
+//       {
+//         "color": "#e5e5e5"
+//       }
+//     ]
+//   },
+//   {
+//     "featureType": "transit.station",
+//     "elementType": "geometry",
+//     "stylers": [
+//       {
+//         "color": "#eeeeee"
+//       }
+//     ]
+//   },
+//   {
+//     "featureType": "water",
+//     "elementType": "geometry",
+//     "stylers": [
+//       {
+//         "color": "#c9c9c9"
+//       }
+//     ]
+//   },
+//   {
+//     "featureType": "water",
+//     "elementType": "labels.text.fill",
+//     "stylers": [
+//       {
+//         "color": "#9e9e9e"
+//       }
+//     ]
+//   }
+// ];
 
-export default function PlacesScreen() {
-  const colorScheme = useColorScheme();
-  const router = useRouter();
-  const [location, setLocation] = useState(null);
-  const [errorMsg, setErrorMsg] = useState(null);
-  const [loading, setLoading] = useState(true);
+// export default function PlacesScreen() {
+//   const colorScheme = useColorScheme();
+//   const router = useRouter();
+//   const [location, setLocation] = useState(null);
+//   const [errorMsg, setErrorMsg] = useState(null);
+//   const [loading, setLoading] = useState(true);
+//   const [selectedMarker, setSelectedMarker] = useState(null);
+//   const mapRef = useRef(null);
+//   const calloutAnimation = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
-        setLoading(false);
-        return;
-      }
+//   useEffect(() => {
+//     (async () => {
+//       let { status } = await Location.requestForegroundPermissionsAsync();
+//       if (status !== 'granted') {
+//         setErrorMsg('Permission to access location was denied');
+//         setLoading(false);
+//         return;
+//       }
 
-      try {
-        let location = await Location.getCurrentPositionAsync({});
-        setLocation(location);
-      } catch (error) {
-        setErrorMsg('Could not get your location');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+//       try {
+//         let location = await Location.getCurrentPositionAsync({});
+//         setLocation(location);
+//       } catch (error) {
+//         setErrorMsg('Could not get your location');
+//       } finally {
+//         setLoading(false);
+//       }
+//     })();
+//   }, []);
 
-  const handleMarkerPress = (entryId) => {
-    // This is handled by the callout now
-  };
+//   const handleMarkerPress = (entryId) => {
+//     setSelectedMarker(entryId);
+    
+//     // Animate callout appearance
+//     Animated.spring(calloutAnimation, {
+//       toValue: 1,
+//       friction: 7,
+//       tension: 40,
+//       useNativeDriver: true,
+//     }).start();
+//   };
 
-  const handleCalloutPress = (entryId) => {
-    router.push(`/entry/${entryId}`);
-  };
+//   const handleCalloutPress = (entryId) => {
+//     router.push(`/entry/${entryId}`);
+//   };
 
-  if (loading) {
-    return (
-      <ThemedView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors[colorScheme ?? 'light'].tint} />
-        <ThemedText style={{ marginTop: 16 }}>Loading map...</ThemedText>
-      </ThemedView>
-    );
-  }
+//   const initialRegion = location
+//     ? {
+//         latitude: location.coords.latitude,
+//         longitude: location.coords.longitude,
+//         latitudeDelta: 0.0922,
+//         longitudeDelta: 0.0421,
+//       }
+//     : {
+//         latitude: 37.78825,
+//         longitude: -122.4324,
+//         latitudeDelta: 0.0922,
+//         longitudeDelta: 0.0421,
+//       };
 
-  if (errorMsg) {
-    return (
-      <ThemedView style={styles.errorContainer}>
-        <ThemedText style={{ marginBottom: 16 }}>{errorMsg}</ThemedText>
-        <TouchableOpacity
-          style={{
-            backgroundColor: Colors[colorScheme ?? 'light'].tint,
-            paddingHorizontal: 16,
-            paddingVertical: 8,
-            borderRadius: 20,
-          }}
-          onPress={() => router.back()}
-        >
-          <ThemedText style={{ color: '#4b3621', fontWeight: '600' }}>Go Back</ThemedText>
-        </TouchableOpacity>
-      </ThemedView>
-    );
-  }
+//   if (loading) {
+//     return (
+//       <ThemedView style={[styles.container, styles.centerContent]}>
+//         <ActivityIndicator size="large" color={Colors[colorScheme ?? 'light'].tint} />
+//         <ThemedText style={styles.loadingText}>Loading map...</ThemedText>
+//       </ThemedView>
+//     );
+//   }
 
-  const initialRegion = location
-    ? {
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
-      }
-    : {
-        latitude: 40.7128, // Default to NYC
-        longitude: -74.0060,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
-      };
+//   if (errorMsg) {
+//     return (
+//       <ThemedView style={[styles.container, styles.centerContent]}>
+//         <FontAwesome name="exclamation-triangle" size={48} color={Colors[colorScheme ?? 'light'].tint} />
+//         <ThemedText style={styles.errorText}>{errorMsg}</ThemedText>
+//         <TouchableOpacity 
+//           style={styles.retryButton}
+//           onPress={() => router.replace('/places')}
+//         >
+//           <ThemedText style={styles.retryText}>Retry</ThemedText>
+//         </TouchableOpacity>
+//       </ThemedView>
+//     );
+//   }
 
-  return (
-    <ThemedView style={styles.container}>
-      <View style={styles.header}>
-        <ThemedText type="title">Places</ThemedText>
-      </View>
+//   return (
+//     <ThemedView style={styles.container}>
+//       <View style={styles.header}>
+//         <ThemedText type="title">Places</ThemedText>
+//       </View>
+      
+//       <MapView
+//         ref={mapRef}
+//         style={styles.map}
+//         initialRegion={initialRegion}
+//         provider={PROVIDER_GOOGLE}
+//         customMapStyle={mapStyle}
+//         showsUserLocation
+//         showsMyLocationButton
+//       >
+//         {sampleEntries.map((entry) => (
+//           <Marker
+//             key={entry.id}
+//             coordinate={entry.location}
+//             onPress={() => handleMarkerPress(entry.id)}
+//             pinColor={Colors[colorScheme ?? 'light'].tint}
+//           >
+//             <Callout 
+//               tooltip
+//               onPress={() => handleCalloutPress(entry.id)}
+//             >
+//               <Animated.View 
+//                 style={[
+//                   styles.calloutContainer,
+//                   selectedMarker === entry.id && {
+//                     transform: [
+//                       { scale: calloutAnimation.interpolate({
+//                         inputRange: [0, 1],
+//                         outputRange: [0.8, 1]
+//                       })}
+//                     ]
+//                   }
+//                 ]}
+//               >
+//                 <GlassCard style={styles.callout}>
+//                   <ThemedText style={styles.calloutTitle}>{entry.title}</ThemedText>
+//                   <ThemedText style={styles.calloutPreview} numberOfLines={1}>{entry.preview}</ThemedText>
+//                   <ThemedText style={styles.calloutDate}>{new Date(entry.date).toLocaleDateString('en-US', {
+//                     month: 'short',
+//                     day: 'numeric',
+//                     year: 'numeric',
+//                   })}</ThemedText>
+//                   <TouchableOpacity 
+//                     style={styles.calloutAction}
+//                     onPress={() => handleCalloutPress(entry.id)}
+//                   >
+//                     <ThemedText style={styles.calloutActionText}>View Entry</ThemedText>
+//                   </TouchableOpacity>
+//                 </GlassCard>
+//               </Animated.View>
+//             </Callout>
+//           </Marker>
+//         ))}
+//       </MapView>
+//     </ThemedView>
+//   );
+// }
 
-      <View style={styles.mapContainer}>
-        <MapView
-          style={styles.map}
-          initialRegion={initialRegion}
-          provider={PROVIDER_GOOGLE}
-          showsUserLocation
-          showsMyLocationButton
-          customMapStyle={colorScheme === 'dark' ? darkMapStyle : []}
-        >
-          {sampleEntries.map((entry) => (
-            <Marker
-              key={entry.id}
-              coordinate={{
-                latitude: entry.location.latitude,
-                longitude: entry.location.longitude,
-              }}
-              pinColor={Colors[colorScheme ?? 'light'].tint}
-              onPress={() => handleMarkerPress(entry.id)}
-            >
-              <Callout
-                tooltip
-                onPress={() => handleCalloutPress(entry.id)}
-              >
-                <View style={styles.calloutContainer}>
-                  <ThemedText style={styles.calloutTitle}>{entry.title}</ThemedText>
-                  <ThemedText style={styles.calloutPreview} numberOfLines={2}>
-                    {entry.preview}
-                  </ThemedText>
-                  <ThemedText style={styles.calloutDate}>
-                    {new Date(entry.date).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </ThemedText>
-                  <TouchableOpacity style={styles.calloutAction}>
-                    <ThemedText style={styles.calloutActionText}>View Entry</ThemedText>
-                  </TouchableOpacity>
-                </View>
-              </Callout>
-            </Marker>
-          ))}
-        </MapView>
-      </View>
-    </ThemedView>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 60,
-  },
-  header: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  mapContainer: {
-    flex: 1,
-    overflow: 'hidden',
-    borderRadius: 20,
-    margin: 16,
-  },
-  map: {
-    width: '100%',
-    height: '100%',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  calloutContainer: {
-    width: 200,
-    padding: 12,
-    backgroundColor: 'white',
-    borderRadius: 12,
-    ...Platform.select({
-      android: {
-        elevation: 5,
-      },
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-      },
-    }),
-  },
-  calloutTitle: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginBottom: 4,
-    color: '#4b3621',
-  },
-  calloutPreview: {
-    fontSize: 14,
-    marginBottom: 4,
-    color: '#4b3621',
-  },
-  calloutDate: {
-    fontSize: 12,
-    color: '#8a7866',
-    marginBottom: 8,
-  },
-  calloutAction: {
-    backgroundColor: '#f7c5a8',
-    padding: 6,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  calloutActionText: {
-    color: '#4b3621',
-    fontWeight: '600',
-    fontSize: 12,
-  },
-});
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//   },
+//   centerContent: {
+//     justifyContent: 'center',
+//     alignItems: 'center',
+//     padding: 20,
+//   },
+//   header: {
+//     paddingTop: 60,
+//     paddingHorizontal: 16,
+//     paddingBottom: 16,
+//     zIndex: 10,
+//   },
+//   map: {
+//     flex: 1,
+//   },
+//   loadingText: {
+//     marginTop: 16,
+//     fontSize: 16,
+//   },
+//   errorText: {
+//     marginTop: 16,
+//     fontSize: 16,
+//     textAlign: 'center',
+//     marginBottom: 24,
+//   },
+//   retryButton: {
+//     backgroundColor: Colors.light.tint,
+//     paddingHorizontal: 24,
+//     paddingVertical: 12,
+//     borderRadius: 24,
+//   },
+//   retryText: {
+//     fontWeight: '600',
+//     color: '#4b3621',
+//   },
+//   calloutContainer: {
+//     width: 200,
+//     borderRadius: 12,
+//     overflow: 'hidden',
+//   },
+//   callout: {
+//     padding: 12,
+//   },
+//   calloutTitle: {
+//     fontSize: 16,
+//     fontWeight: '600',
+//     marginBottom: 4,
+//     color: '#4b3621',
+//   },
+//   calloutPreview: {
+//     fontSize: 14,
+//     marginBottom: 4,
+//     color: '#4b3621',
+//   },
+//   calloutDate: {
+//     fontSize: 12,
+//     color: '#8a7866',
+//     marginBottom: 8,
+//   },
+//   calloutAction: {
+//     backgroundColor: '#f7c5a8',
+//     padding: 6,
+//     borderRadius: 12,
+//     alignItems: 'center',
+//   },
+//   calloutActionText: {
+//     color: '#4b3621',
+//     fontWeight: '600',
+//     fontSize: 12,
+//   },
+// });

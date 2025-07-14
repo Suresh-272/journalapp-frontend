@@ -94,7 +94,8 @@ export default function Login() {
             source={require('../../assets/images/logo-m2.jpg')}
             style={styles.logo}
           />
-          <Text style={styles.title}>Welcome to My Journal</Text>
+            <Text style={styles.title}>Welcome to</Text>
+            <Text style={styles.title}>Daily Muse</Text>
           <Text style={styles.subtitle}>Login to continue</Text>
         </View>
 
@@ -104,6 +105,7 @@ export default function Login() {
             <TextInput
               style={styles.input}
               placeholder="Enter your mobile number"
+              placeholderTextColor="#8B7355"
               value={mobileno}
               onChangeText={setMobileno}
               keyboardType="phone-pad"
@@ -116,6 +118,7 @@ export default function Login() {
             <TextInput
               style={styles.input}
               placeholder="Enter your password"
+              placeholderTextColor="#8B7355"
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -149,10 +152,11 @@ export default function Login() {
     </KeyboardAvoidingView>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FCFCFC',
+    backgroundColor: '#F5F0E8', // Warm cream/beige background matching Squarespace
     padding: 20,
   },
   header: {
@@ -165,16 +169,26 @@ const styles = StyleSheet.create({
     height: 100,
     borderRadius: 50,
     marginBottom: 20,
+    // Warm brown shadow
+    shadowColor: '#B8956A',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   title: {
-    fontSize: 24,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#181725',
+    color: '#3D3D3D', // Dark text on light background
     marginBottom: 10,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
-    color: '#7C7C7C',
+    color: '#6B5B4F', // Medium brown text
     textAlign: 'center',
   },
   form: {
@@ -185,37 +199,57 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    color: '#181725',
+    color: '#3D3D3D', // Dark label text
     marginBottom: 8,
+    fontWeight: '500',
   },
   input: {
-    backgroundColor: '#F2F3F2',
+    backgroundColor: '#FFFFFF', // White input background
     borderRadius: 15,
-    padding: 15,
+    padding: 18,
     fontSize: 16,
-    color: '#181725',
+    color: '#3D3D3D', // Dark input text
+    borderWidth: 1,
+    borderColor: '#D4C4B0', // Light brown border
+    shadowColor: '#B8956A',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   forgotPassword: {
     alignSelf: 'flex-end',
     marginBottom: 20,
   },
   forgotPasswordText: {
-    color: '#53B175',
+    color: '#B8956A', // Warm brown color matching buttons
     fontSize: 14,
     fontWeight: '500',
   },
   button: {
-    backgroundColor: '#53B175',
+    backgroundColor: '#B8956A', // Warm brown button color matching Squarespace
     borderRadius: 15,
     padding: 18,
     alignItems: 'center',
     marginTop: 10,
+    shadowColor: '#B8956A',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonDisabled: {
-    backgroundColor: '#A8E4BD',
+    backgroundColor: '#D4C4B0', // Lighter brown when disabled
+    opacity: 0.7,
   },
   buttonText: {
-    color: '#FFF',
+    color: '#FFFFFF', // White text on brown button
     fontSize: 18,
     fontWeight: '600',
   },
@@ -225,11 +259,11 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   footerText: {
-    color: '#7C7C7C',
+    color: '#6B5B4F', // Medium brown text
     fontSize: 16,
   },
   footerLink: {
-    color: '#53B175',
+    color: '#B8956A', // Warm brown link color
     fontSize: 16,
     fontWeight: '600',
   },

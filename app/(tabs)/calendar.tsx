@@ -100,14 +100,14 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
-    paddingHorizontal: 16,
+    padding: 16,
   },
   header: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   calendarCard: {
-    marginBottom: 20,
+    marginBottom: 16,
+    padding: 8,
   },
   entriesSection: {
     marginTop: 16,
@@ -116,10 +116,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   entrySummary: {
+    padding: 16,
     marginBottom: 12,
   },
   previewText: {
     marginTop: 8,
-    opacity: 0.8,
+    opacity: 0.7,
   },
 });

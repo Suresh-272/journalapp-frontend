@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { Link, useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { StyleSheet, FlatList, TouchableOpacity, View, Dimensions } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { StyleSheet, FlatList, TouchableOpacity, View, Dimensions, Animated } from 'react-native';
 
 import { GlassCard } from '@/components/GlassCard';
 import { ThemedText } from '@/components/ThemedText';
@@ -9,6 +9,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { FontAwesome } from '@expo/vector-icons';
 
 // Sample media items for demonstration
 const sampleMedia = [
@@ -22,81 +23,96 @@ const sampleMedia = [
   },
   {
     id: '2',
-    type: 'audio',
-    uri: 'audio-file-path.mp3',
-    duration: 120, // in seconds
-    title: 'Voice Note',
+    type: 'video',
+    uri: 'https://picsum.photos/id/238/300/300',
+    title: 'Beach Sunset',
+    duration: '0:45',
     date: '2023-10-14',
     entryId: '2',
   },
   {
     id: '3',
-    type: 'video',
-    uri: 'video-file-path.mp4',
-    duration: 45, // in seconds
-    title: 'Beach Sunset',
-    date: '2023-10-13',
+    type: 'audio',
+    title: 'Voice Note',
+    duration: '1:23',
+    date: '2023-10-12',
     entryId: '3',
   },
   {
     id: '4',
     type: 'photo',
-    uri: 'https://picsum.photos/id/1005/300/300',
-    title: 'Coffee Shop',
-    date: '2023-10-12',
+    uri: 'https://picsum.photos/id/239/300/300',
+    title: 'City Lights',
+    date: '2023-10-10',
     entryId: '4',
   },
   {
     id: '5',
     type: 'photo',
-    uri: 'https://picsum.photos/id/1015/300/300',
+    uri: 'https://picsum.photos/id/240/300/300',
     title: 'Mountain View',
-    date: '2023-10-11',
+    date: '2023-10-08',
     entryId: '5',
   },
   {
     id: '6',
-    type: 'audio',
-    uri: 'audio-file-path-2.mp3',
-    duration: 90, // in seconds
-    title: 'Thoughts',
-    date: '2023-10-10',
+    type: 'video',
+    uri: 'https://picsum.photos/id/241/300/300',
+    title: 'Family Gathering',
+    duration: '2:10',
+    date: '2023-10-05',
     entryId: '6',
   },
   {
     id: '7',
-    type: 'video',
-    uri: 'video-file-path-2.mp4',
-    duration: 60, // in seconds
-    title: 'City Lights',
-    date: '2023-10-09',
+    type: 'audio',
+    title: 'Meeting Notes',
+    duration: '3:45',
+    date: '2023-10-03',
     entryId: '7',
   },
   {
     id: '8',
     type: 'photo',
-    uri: 'https://picsum.photos/id/1025/300/300',
-    title: 'My Dog',
-    date: '2023-10-08',
+    uri: 'https://picsum.photos/id/242/300/300',
+    title: 'Garden Flowers',
+    date: '2023-10-01',
     entryId: '8',
   },
 ];
-
-// Format seconds to MM:SS
-const formatDuration = (seconds) => {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-};
 
 export default function MediaScreen() {
   const colorScheme = useColorScheme();
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState('all');
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const filterBarOpacity = useRef(new Animated.Value(1)).current;
   
   const filteredMedia = activeFilter === 'all' 
     ? sampleMedia 
     : sampleMedia.filter(item => item.type === activeFilter);
+
+  const handleScroll = (event) => {
+    const currentScrollY = event.nativeEvent.contentOffset.y;
+    
+    if (currentScrollY > lastScrollY && currentScrollY > 20) {
+      // Scrolling down, hide filter bar
+      Animated.timing(filterBarOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    } else if (currentScrollY < lastScrollY || currentScrollY < 20) {
+      // Scrolling up or near top, show filter bar
+      Animated.timing(filterBarOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+    
+    setLastScrollY(currentScrollY);
+  };
 
   const renderMediaItem = ({ item }) => {
     const formattedDate = new Date(item.date).toLocaleDateString('en-US', {
@@ -117,6 +133,7 @@ export default function MediaScreen() {
                 source={{ uri: item.uri }}
                 style={styles.thumbnail}
                 contentFit="cover"
+                transition={300}
               />
             )}
             
@@ -126,37 +143,32 @@ export default function MediaScreen() {
                   source={{ uri: item.uri }}
                   style={styles.thumbnail}
                   contentFit="cover"
+                  transition={300}
                 />
                 <View style={styles.videoBadge}>
-                  <IconSymbol name="play.fill" size={16} color="#fff" />
+                  <FontAwesome name="play" size={12} color="#fff" />
                 </View>
-                <View style={styles.durationBadge}>
-                  <ThemedText style={styles.durationText}>
-                    {formatDuration(item.duration)}
-                  </ThemedText>
-                </View>
+                {item.duration && (
+                  <View style={styles.durationBadge}>
+                    <ThemedText style={styles.durationText}>{item.duration}</ThemedText>
+                  </View>
+                )}
               </>
             )}
             
             {item.type === 'audio' && (
-              <View style={styles.audioContainer}>
-                <IconSymbol name="mic" size={32} color={Colors[colorScheme ?? 'light'].icon} />
-                <View style={styles.durationBadge}>
-                  <ThemedText style={styles.durationText}>
-                    {formatDuration(item.duration)}
-                  </ThemedText>
-                </View>
+              <View style={[styles.audioThumbnail, { backgroundColor: Colors[colorScheme ?? 'light'].pastelPink }]}>
+                <FontAwesome name="microphone" size={24} color={Colors[colorScheme ?? 'light'].text} />
+                {item.duration && (
+                  <ThemedText style={styles.audioTitle}>{item.duration}</ThemedText>
+                )}
               </View>
             )}
           </View>
           
           <View style={styles.mediaInfo}>
-            <ThemedText style={styles.mediaTitle} numberOfLines={1}>
-              {item.title}
-            </ThemedText>
-            <ThemedText style={styles.mediaDate}>
-              {formattedDate}
-            </ThemedText>
+            <ThemedText style={styles.mediaTitle} numberOfLines={1}>{item.title}</ThemedText>
+            <ThemedText style={styles.mediaDate}>{formattedDate}</ThemedText>
           </View>
         </GlassCard>
       </TouchableOpacity>
@@ -169,109 +181,88 @@ export default function MediaScreen() {
         <ThemedText type="title">Media</ThemedText>
       </View>
       
-      <View style={styles.filterContainer}>
-        <TouchableOpacity
-          style={styles.filterOption}
+      <Animated.View style={[styles.filterContainer, { opacity: filterBarOpacity }]}>
+        <TouchableOpacity 
+          style={[styles.filterOption, activeFilter === 'all' && styles.activeFilter]}
           onPress={() => setActiveFilter('all')}
         >
-          <ThemedText 
-            style={[
-              styles.filterText, 
-              activeFilter === 'all' && styles.activeFilterText
-            ]}
-          >
-            All
-          </ThemedText>
+          <ThemedText style={[styles.filterText, activeFilter === 'all' && styles.activeFilterText]}>All</ThemedText>
         </TouchableOpacity>
         
-        <TouchableOpacity
-          style={styles.filterOption}
+        <TouchableOpacity 
+          style={[styles.filterOption, activeFilter === 'photo' && styles.activeFilter]}
           onPress={() => setActiveFilter('photo')}
         >
-          <ThemedText 
-            style={[
-              styles.filterText, 
-              activeFilter === 'photo' && styles.activeFilterText
-            ]}
-          >
-            Photos
-          </ThemedText>
+          <ThemedText style={[styles.filterText, activeFilter === 'photo' && styles.activeFilterText]}>Photos</ThemedText>
         </TouchableOpacity>
         
-        <TouchableOpacity
-          style={styles.filterOption}
+        <TouchableOpacity 
+          style={[styles.filterOption, activeFilter === 'video' && styles.activeFilter]}
           onPress={() => setActiveFilter('video')}
         >
-          <ThemedText 
-            style={[
-              styles.filterText, 
-              activeFilter === 'video' && styles.activeFilterText
-            ]}
-          >
-            Videos
-          </ThemedText>
+          <ThemedText style={[styles.filterText, activeFilter === 'video' && styles.activeFilterText]}>Videos</ThemedText>
         </TouchableOpacity>
         
-        <TouchableOpacity
-          style={styles.filterOption}
+        <TouchableOpacity 
+          style={[styles.filterOption, activeFilter === 'audio' && styles.activeFilter]}
           onPress={() => setActiveFilter('audio')}
         >
-          <ThemedText 
-            style={[
-              styles.filterText, 
-              activeFilter === 'audio' && styles.activeFilterText
-            ]}
-          >
-            Audio
-          </ThemedText>
+          <ThemedText style={[styles.filterText, activeFilter === 'audio' && styles.activeFilterText]}>Audio</ThemedText>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
       
       <FlatList
         data={filteredMedia}
         renderItem={renderMediaItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         numColumns={2}
-        contentContainerStyle={styles.mediaGrid}
+        contentContainerStyle={styles.mediaList}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       />
     </ThemedView>
   );
 }
 
 const { width } = Dimensions.get('window');
-const itemWidth = (width - 48) / 2; // 48 = padding (16) * 2 + gap between items (16)
+const itemWidth = (width - 48) / 2; // 2 columns with padding
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 60,
   },
   header: {
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    paddingTop: 60,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   filterContainer: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    marginBottom: 16,
+    paddingBottom: 16,
+    zIndex: 10,
   },
   filterOption: {
-    marginRight: 16,
+    paddingHorizontal: 16,
     paddingVertical: 8,
+    borderRadius: 20,
+    marginRight: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  activeFilter: {
+    backgroundColor: Colors.light.tint,
   },
   filterText: {
-    fontSize: 16,
-    opacity: 0.6,
+    fontSize: 14,
   },
   activeFilterText: {
     fontWeight: '600',
-    opacity: 1,
-    borderBottomWidth: 2,
-    borderBottomColor: Colors.light.tint,
+    color: '#4b3621',
   },
-  mediaGrid: {
+  mediaList: {
     padding: 16,
+    paddingTop: 8,
   },
   mediaItem: {
     width: itemWidth,
@@ -279,7 +270,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
   mediaCard: {
-    padding: 0,
+    borderRadius: 12,
     overflow: 'hidden',
   },
   thumbnailContainer: {
@@ -290,23 +281,31 @@ const styles = StyleSheet.create({
   thumbnail: {
     width: '100%',
     height: '100%',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
   },
-  audioContainer: {
+  audioThumbnail: {
     width: '100%',
     height: '100%',
-    backgroundColor: 'rgba(247, 197, 168, 0.3)',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  audioTitle: {
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: '500',
   },
   videoBadge: {
     position: 'absolute',
     top: '50%',
     left: '50%',
-    transform: [{ translateX: -16 }, { translateY: -16 }],
+    transform: [{ translateX: -15 }, { translateY: -15 }],
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 16,
-    width: 32,
-    height: 32,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -315,9 +314,9 @@ const styles = StyleSheet.create({
     bottom: 8,
     right: 8,
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
   durationText: {
     color: '#fff',
