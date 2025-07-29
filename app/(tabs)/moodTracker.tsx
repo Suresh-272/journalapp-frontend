@@ -20,13 +20,13 @@ const MoodTracker = ({ navigation }) => {
   const [selectedMood, setSelectedMood] = useState(null);
   const [totalEntries, setTotalEntries] = useState(0);
 
-  // Mood options with values for chart
+  // Mood options with values for chart - updated colors to match earth theme
   const moodOptions = [
-    { emoji: '😢', label: 'Very Sad', value: 1, color: '#FF4444' },
-    { emoji: '😞', label: 'Sad', value: 2, color: '#FF8844' },
-    { emoji: '😐', label: 'Neutral', value: 3, color: '#FFAA44' },
-    { emoji: '😊', label: 'Happy', value: 4, color: '#88DD44' },
-    { emoji: '😄', label: 'Very Happy', value: 5, color: '#44DD44' },
+    { emoji: '😢', label: 'Very Sad', value: 1, color: '#B85450' },
+    { emoji: '😞', label: 'Sad', value: 2, color: '#C67B5C' },
+    { emoji: '😐', label: 'Neutral', value: 3, color: '#D4A574' },
+    { emoji: '😊', label: 'Happy', value: 4, color: '#9B8F7A' },
+    { emoji: '😄', label: 'Very Happy', value: 5, color: '#7A8471' },
   ];
 
   useEffect(() => {
@@ -157,7 +157,7 @@ const MoodTracker = ({ navigation }) => {
       datasets: [
         {
           data: last7Days.map(entry => entry.mood),
-          color: (opacity = 1) => `rgba(68, 221, 68, ${opacity})`,
+          color: (opacity = 1) => `rgba(122, 132, 113, ${opacity})`,
           strokeWidth: 3,
         },
       ],
@@ -172,7 +172,7 @@ const MoodTracker = ({ navigation }) => {
 
   const getMoodColor = (value) => {
     const mood = moodOptions.find(m => m.value === Math.round(value));
-    return mood ? mood.color : '#CCCCCC';
+    return mood ? mood.color : '#9B8F7A';
   };
 
   return (
@@ -222,19 +222,19 @@ const MoodTracker = ({ navigation }) => {
           height={220}
           yAxisInterval={1}
           chartConfig={{
-            backgroundColor: '#ffffff',
-            backgroundGradientFrom: '#ffffff',
-            backgroundGradientTo: '#ffffff',
+            backgroundColor: '#F5F2E8',
+            backgroundGradientFrom: '#F5F2E8',
+            backgroundGradientTo: '#F5F2E8',
             decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(68, 221, 68, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+            color: (opacity = 1) => `rgba(122, 132, 113, ${opacity})`,
+            labelColor: (opacity = 1) => `rgba(106, 90, 75, ${opacity})`,
             style: {
               borderRadius: 16,
             },
             propsForDots: {
               r: '6',
               strokeWidth: '2',
-              stroke: '#44DD44',
+              stroke: '#7A8471',
             },
           }}
           bezier
@@ -306,23 +306,24 @@ const MoodTracker = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#E8DCC6', // Warm beige background like the journal app
+    paddingTop: 50, // Add top margin to prevent full screen takeover
   },
   header: {
     padding: 20,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#F5F2E8', // Light warm beige
     borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    borderBottomColor: '#D4C4A0',
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#212529',
+    color: '#6A5A4B', // Dark brown text
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#6c757d',
+    color: '#8B7B6B', // Medium brown
   },
   statsContainer: {
     flexDirection: 'row',
@@ -332,26 +333,28 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#F5F2E8', // Light warm beige
     padding: 15,
     marginHorizontal: 5,
     borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#6A5A4B',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: '#E8DCC6',
   },
   statNumber: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#212529',
+    color: '#6A5A4B', // Dark brown
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: '#6c757d',
+    color: '#8B7B6B', // Medium brown
     textAlign: 'center',
   },
   statEmoji: {
@@ -359,22 +362,24 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   averageMoodContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#F5F2E8', // Light warm beige
     margin: 20,
     marginTop: 10,
     padding: 20,
     borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: '#6A5A4B',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: '#E8DCC6',
   },
   averageMoodTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#212529',
+    color: '#6A5A4B', // Dark brown
     marginBottom: 10,
   },
   averageMoodValue: {
@@ -387,25 +392,27 @@ const styles = StyleSheet.create({
   },
   averageMoodScale: {
     fontSize: 18,
-    color: '#6c757d',
+    color: '#8B7B6B', // Medium brown
     marginLeft: 4,
   },
   chartContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#F5F2E8', // Light warm beige
     margin: 20,
     marginTop: 0,
     padding: 20,
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: '#6A5A4B',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: '#E8DCC6',
   },
   chartTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#212529',
+    color: '#6A5A4B', // Dark brown
     marginBottom: 15,
     textAlign: 'center',
   },
@@ -414,21 +421,23 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   moodInputContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#F5F2E8', // Light warm beige
     margin: 20,
     marginTop: 0,
     padding: 20,
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: '#6A5A4B',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: '#E8DCC6',
   },
   moodInputTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#212529',
+    color: '#6A5A4B', // Dark brown
     marginBottom: 15,
     textAlign: 'center',
   },
@@ -443,11 +452,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     flex: 1,
     marginHorizontal: 2,
+    backgroundColor: '#E8DCC6', // Warm beige
   },
   selectedMoodOption: {
-    backgroundColor: '#e3f2fd',
+    backgroundColor: '#D4C4A0', // Darker warm beige when selected
     borderWidth: 2,
-    borderColor: '#2196f3',
+    borderColor: '#B8A082', // Brown border
   },
   moodEmoji: {
     fontSize: 24,
@@ -455,37 +465,39 @@ const styles = StyleSheet.create({
   },
   moodLabel: {
     fontSize: 11,
-    color: '#6c757d',
+    color: '#6A5A4B', // Dark brown
     textAlign: 'center',
   },
   submitButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#9B8F7A', // Warm brown button
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 8,
     alignSelf: 'center',
   },
   submitButtonText: {
-    color: '#ffffff',
+    color: '#F5F2E8', // Light text on dark button
     fontSize: 16,
     fontWeight: '600',
   },
   recentEntriesContainer: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#F5F2E8', // Light warm beige
     margin: 20,
     marginTop: 0,
     padding: 20,
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: '#6A5A4B',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 1,
+    borderColor: '#E8DCC6',
   },
   recentEntriesTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#212529',
+    color: '#6A5A4B', // Dark brown
     marginBottom: 15,
   },
   recentEntry: {
@@ -493,7 +505,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f3f4',
+    borderBottomColor: '#E8DCC6',
   },
   recentEntryEmoji: {
     fontSize: 24,
@@ -505,16 +517,16 @@ const styles = StyleSheet.create({
   recentEntryLabel: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#212529',
+    color: '#6A5A4B', // Dark brown
   },
   recentEntryDate: {
     fontSize: 14,
-    color: '#6c757d',
+    color: '#8B7B6B', // Medium brown
     marginTop: 2,
   },
   noDataText: {
     fontSize: 16,
-    color: '#6c757d',
+    color: '#8B7B6B', // Medium brown
     textAlign: 'center',
     fontStyle: 'italic',
   },

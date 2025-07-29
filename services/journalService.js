@@ -1,6 +1,32 @@
 import api from '../utils/api';
 import * as FileSystem from 'expo-file-system';
 
+// Get all journal entries for the current user
+export const getJournals = async (page = 1, limit = 10, filters = {}) => {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...filters
+    });
+    
+    const response = await api.get(`/journals?${params}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Failed to fetch journal entries' };
+  }
+};
+
+// Get a single journal entry by ID
+export const getJournal = async (journalId) => {
+  try {
+    const response = await api.get(`/journals/${journalId}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Failed to fetch journal entry' };
+  }
+};
+
 // Create a new journal entry
 export const createJournal = async (journalData) => {
   try {
