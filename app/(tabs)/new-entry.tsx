@@ -21,15 +21,61 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import { createJournalWithMedia } from '../../services/journalService';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
+
+// Custom color theme for the journal entry screen
+const journalTheme = {
+  // Warm, earthy brown and beige colors inspired by the image
+  headerBrown: '#8B6B4C', // Rich brown for header
+  warmBeige: '#F7F3ED', // Very light warm beige background
+  cardBeige: '#F0E8D8', // Light cream for cards and sections
+  controlBeige: '#E8DCC8', // Warm beige for control panels
+  darkBrown: '#5D4E37', // Dark brown for text
+  mediumBrown: '#8B7355', // Medium brown for secondary text
+  warmAccent: '#B8956A', // Warm accent for highlights
+  navBrown: '#6B5B4F', // Dark brown for navigation
+  lightBrown: '#D4C4B0', // Light brown for borders
+  // Additional properties needed for compatibility
+  background: '#F7F3ED', // Same as warmBeige
+  text: '#5D4E37', // Same as darkBrown
+  tint: '#E8DCC8', // Same as headerBrown
+  cardBackground: '#F0E8D8', // Same as cardBeige
+  tabIconDefault: '#8B7355', // Same as mediumBrown
+  pastelPink: '#F0E8D8', // Same as cardBeige
+  pastelBlue: '#E8DCC8', // Same as controlBeige
+};
 
 const { width, height } = Dimensions.get('window');
 
+// Type definitions
+interface Photo {
+  uri: string;
+  type: string;
+  timestamp: number;
+  fileName: string;
+}
+
+interface CategoryModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onSelect: (category: string) => void;
+  selectedCategory: string;
+}
+
+interface JournalEntryScreenProps {
+  navigation?: any;
+  onClose?: () => void;
+}
+
 // Camera Component with Updated Expo Camera
-const CameraViewComponent = ({ onCapture, onClose }) => {
+const CameraViewComponent = ({ onCapture, onClose }: { onCapture: (photo: Photo) => void; onClose: () => void }) => {
   const [permission, requestPermission] = useCameraPermissions();
-  const [facing, setFacing] = useState('back');
+  const [facing, setFacing] = useState<'front' | 'back'>('back');
   const [isCapturing, setIsCapturing] = useState(false);
-  const cameraRef = useRef(null);
+  const cameraRef = useRef<any>(null);
+  const colorScheme = useColorScheme();
+  const theme = journalTheme;
 
   const handleCapture = async () => {
     if (!cameraRef.current) return;
@@ -45,7 +91,7 @@ const CameraViewComponent = ({ onCapture, onClose }) => {
       // Save to media library
       await MediaLibrary.saveToLibraryAsync(photo.uri);
       
-      const capturedPhoto = {
+      const capturedPhoto: Photo = {
         uri: photo.uri,
         type: 'photo',
         timestamp: Date.now(),
@@ -69,11 +115,11 @@ const CameraViewComponent = ({ onCapture, onClose }) => {
 
   if (!permission) {
     return (
-      <View style={styles.cameraContainer}>
-        <StatusBar barStyle="dark-content" backgroundColor="#F5F2EE" />
+      <View style={[styles.cameraContainer, { backgroundColor: theme.background }]}>
+        <StatusBar barStyle="dark-content" backgroundColor={theme.background} />
         <View style={styles.cameraViewfinder}>
           <View style={styles.cameraOverlay}>
-            <Text style={styles.cameraText}>Requesting Camera Permission</Text>
+            <Text style={[styles.cameraText, { color: theme.text, backgroundColor: theme.cardBackground }]}>Requesting Camera Permission</Text>
           </View>
         </View>
       </View>
@@ -82,21 +128,21 @@ const CameraViewComponent = ({ onCapture, onClose }) => {
 
   if (!permission.granted) {
     return (
-      <View style={styles.cameraContainer}>
-        <StatusBar barStyle="dark-content" backgroundColor="#F5F2EE" />
+      <View style={[styles.cameraContainer, { backgroundColor: theme.background }]}>
+        <StatusBar barStyle="dark-content" backgroundColor={theme.background} />
         <View style={styles.cameraViewfinder}>
           <View style={styles.cameraOverlay}>
-            <Text style={styles.cameraText}>No Camera Access</Text>
-            <Text style={styles.cameraSubtext}>Camera permission is required</Text>
-            <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
-              <Text style={styles.permissionButtonText}>Grant Permission</Text>
+            <Text style={[styles.cameraText, { color: theme.text, backgroundColor: theme.cardBackground }]}>No Camera Access</Text>
+            <Text style={[styles.cameraSubtext, { color: theme.tabIconDefault }]}>Camera permission is required</Text>
+            <TouchableOpacity style={[styles.permissionButton, { backgroundColor: theme.tint }]} onPress={requestPermission}>
+              <Text style={[styles.permissionButtonText, { color: theme.text }]}>Grant Permission</Text>
             </TouchableOpacity>
           </View>
         </View>
         
         <View style={styles.cameraControls}>
-          <TouchableOpacity style={styles.cameraControlButton} onPress={onClose}>
-            <Text style={styles.cameraControlText}>✕</Text>
+          <TouchableOpacity style={[styles.cameraControlButton, { backgroundColor: theme.tint }]} onPress={onClose}>
+            <Text style={[styles.cameraControlText, { color: theme.text }]}>✕</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -104,8 +150,8 @@ const CameraViewComponent = ({ onCapture, onClose }) => {
   }
 
   return (
-    <View style={styles.cameraContainer}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F5F2EE" />
+    <View style={[styles.cameraContainer, { backgroundColor: theme.background }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={theme.background} />
       <CameraView 
         ref={cameraRef} 
         style={styles.cameraViewfinder} 
@@ -113,32 +159,32 @@ const CameraViewComponent = ({ onCapture, onClose }) => {
         ratio="16:9"
       >
         <View style={styles.cameraGrid}>
-          <View style={styles.gridLine} />
-          <View style={[styles.gridLine, styles.gridLineVertical]} />
-          <View style={[styles.gridLine, styles.gridLineHorizontal2]} />
-          <View style={[styles.gridLine, styles.gridLineVertical2]} />
+          <View style={[styles.gridLine, { backgroundColor: theme.tint }]} />
+          <View style={[styles.gridLine, styles.gridLineVertical, { backgroundColor: theme.tint }]} />
+          <View style={[styles.gridLine, styles.gridLineHorizontal2, { backgroundColor: theme.tint }]} />
+          <View style={[styles.gridLine, styles.gridLineVertical2, { backgroundColor: theme.tint }]} />
         </View>
         
         <View style={styles.cameraOverlay}>
-          <Text style={styles.cameraText}>Tap to capture</Text>
+          <Text style={[styles.cameraText, { color: theme.text, backgroundColor: theme.cardBackground }]}>Tap to capture</Text>
         </View>
       </CameraView>
       
       <View style={styles.cameraControls}>
-        <TouchableOpacity style={styles.cameraControlButton} onPress={onClose}>
-          <Text style={styles.cameraControlText}>✕</Text>
+        <TouchableOpacity style={[styles.cameraControlButton, { backgroundColor: theme.tint }]} onPress={onClose}>
+          <Text style={[styles.cameraControlText, { color: theme.text }]}>✕</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={[styles.shutterButton, isCapturing && styles.shutterButtonActive]} 
+          style={[styles.shutterButton, { backgroundColor: theme.tint, borderColor: theme.pastelPink }, isCapturing && styles.shutterButtonActive]} 
           onPress={handleCapture}
           disabled={isCapturing}
         >
-          <View style={styles.shutterButtonInner} />
+          <View style={[styles.shutterButtonInner, { backgroundColor: theme.pastelPink }]} />
         </TouchableOpacity>
         
-        <TouchableOpacity style={styles.cameraControlButton} onPress={switchCamera}>
-          <Text style={styles.cameraControlText}>⟲</Text>
+        <TouchableOpacity style={[styles.cameraControlButton, { backgroundColor: theme.tint }]} onPress={switchCamera}>
+          <Text style={[styles.cameraControlText, { color: theme.text }]}>⟲</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -146,7 +192,10 @@ const CameraViewComponent = ({ onCapture, onClose }) => {
 };
 
 // Category Selection Modal Component
-const CategoryModal = ({ visible, onClose, onSelect, selectedCategory }) => {
+const CategoryModal = ({ visible, onClose, onSelect, selectedCategory }: CategoryModalProps) => {
+  const colorScheme = useColorScheme();
+  const theme = journalTheme;
+  
   const categories = [
     { key: 'personal', label: 'Personal', icon: '👤', description: 'Personal thoughts, feelings, and experiences' },
     { key: 'professional', label: 'Professional', icon: '💼', description: 'Work-related notes, ideas, and reflections' }
@@ -160,11 +209,11 @@ const CategoryModal = ({ visible, onClose, onSelect, selectedCategory }) => {
       onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+        <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Select Category</Text>
-            <TouchableOpacity style={styles.modalCloseButton} onPress={onClose}>
-              <Text style={styles.modalCloseText}>✕</Text>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Select Category</Text>
+            <TouchableOpacity style={[styles.modalCloseButton, { backgroundColor: theme.pastelPink }]} onPress={onClose}>
+              <Text style={[styles.modalCloseText, { color: theme.text }]}>✕</Text>
             </TouchableOpacity>
           </View>
           
@@ -174,7 +223,8 @@ const CategoryModal = ({ visible, onClose, onSelect, selectedCategory }) => {
                 key={category.key}
                 style={[
                   styles.categoryOption,
-                  selectedCategory === category.key && styles.selectedCategoryOption
+                  { backgroundColor: theme.pastelPink, borderColor: theme.pastelPink },
+                  selectedCategory === category.key && { borderColor: theme.tint, backgroundColor: theme.pastelBlue }
                 ]}
                 onPress={() => {
                   onSelect(category.key);
@@ -186,22 +236,23 @@ const CategoryModal = ({ visible, onClose, onSelect, selectedCategory }) => {
                     <Text style={styles.categoryIcon}>{category.icon}</Text>
                     <Text style={[
                       styles.categoryLabel,
-                      selectedCategory === category.key && styles.selectedCategoryLabel
+                      { color: theme.text },
+                      selectedCategory === category.key && { color: theme.text, fontWeight: '700' }
                     ]}>
                       {category.label}
                     </Text>
                   </View>
                   {selectedCategory === category.key && (
-                    <Text style={styles.categorySelectedIcon}>✓</Text>
+                    <Text style={[styles.categorySelectedIcon, { color: theme.text }]}>✓</Text>
                   )}
                 </View>
-                <Text style={styles.categoryDescription}>{category.description}</Text>
+                <Text style={[styles.categoryDescription, { color: theme.tabIconDefault }]}>{category.description}</Text>
               </TouchableOpacity>
             ))}
           </View>
           
-          <TouchableOpacity style={styles.modalConfirmButton} onPress={onClose}>
-            <Text style={styles.modalConfirmText}>Done</Text>
+          <TouchableOpacity style={[styles.modalConfirmButton, { backgroundColor: theme.tint }]} onPress={onClose}>
+            <Text style={[styles.modalConfirmText, { color: theme.text }]}>Done</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -209,18 +260,21 @@ const CategoryModal = ({ visible, onClose, onSelect, selectedCategory }) => {
   );
 };
 
-const JournalEntryScreen = ({ navigation, onClose }) => {
+const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [photos, setPhotos] = useState([]);
+  const [photos, setPhotos] = useState<Array<Photo>>([]);
   const [showCamera, setShowCamera] = useState(false);
   const [activeTab, setActiveTab] = useState('text');
   const [location, setLocation] = useState('');
   const [category, setCategory] = useState('personal'); // Default to personal
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  const textInputRef = useRef(null);
-  const contentInputRef = useRef(null);
+  const textInputRef = useRef<TextInput>(null);
+  const contentInputRef = useRef<TextInput>(null);
+  
+  const colorScheme = useColorScheme();
+  const theme = journalTheme;
 
   // Handle keyboard visibility
   useEffect(() => {
@@ -271,7 +325,7 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
   // Current date formatting
   const getCurrentDate = () => {
     const now = new Date();
-    const options = { 
+    const options: Intl.DateTimeFormatOptions = { 
       weekday: 'short', 
       year: 'numeric', 
       month: 'short', 
@@ -283,8 +337,8 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
   };
 
   // Get category display info
-  const getCategoryInfo = (categoryKey) => {
-    const categoryMap = {
+  const getCategoryInfo = (categoryKey: string) => {
+    const categoryMap: Record<string, { label: string; icon: string }> = {
       personal: { label: 'Personal', icon: '👤' },
       professional: { label: 'Professional', icon: '💼' }
     };
@@ -298,13 +352,13 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
     contentInputRef.current?.blur();
   };
 
-  const handlePhotoCapture = (photo) => {
+  const handlePhotoCapture = (photo: Photo) => {
     setPhotos(prev => [...prev, photo]);
     setShowCamera(false);
     setActiveTab('text');
   };
 
-  const handleRemovePhoto = (index) => {
+  const handleRemovePhoto = (index: number) => {
     Alert.alert(
       'Remove Photo',
       'Are you sure you want to remove this photo?',
@@ -325,6 +379,12 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
       return;
     }
 
+    // Validate category
+    if (!category || !['personal', 'professional'].includes(category)) {
+      Alert.alert('Invalid Category', 'Please select a valid category (Personal or Professional).');
+      return;
+    }
+
     // Dismiss keyboard before saving
     dismissKeyboard();
 
@@ -333,13 +393,18 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
         title: title.trim() || 'Untitled Entry',
         content: content.trim(),
         location: location || '',
-        category: category, // Include category in the data
-        mood: 'neutral'
+        category: category, // Ensure category is properly set
+        mood: 'neutral',
+        tags: []
       };
+      
+      console.log('Saving journal with data:', journalData);
+      console.log('Category being saved:', category);
       
       const response = await createJournalWithMedia(journalData, photos);
       
       console.log('Journal created successfully:', response);
+      console.log('Saved category:', response.data?.category);
       
       Alert.alert('Success', 'Journal entry saved successfully!', [
         { text: 'OK', onPress: () => {
@@ -359,9 +424,10 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
           }
         }}
       ]);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving journal:', error);
-      Alert.alert('Error', 'Failed to save journal entry. Please try again.');
+      const errorMessage = error?.error || error?.message || 'Failed to save journal entry. Please try again.';
+      Alert.alert('Error', errorMessage);
     }
   };
 
@@ -418,7 +484,7 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
       });
 
       if (!result.canceled && result.assets[0]) {
-        const photo = {
+        const photo: Photo = {
           uri: result.assets[0].uri,
           type: 'photo',
           timestamp: Date.now(),
@@ -447,7 +513,7 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
   };
 
   // Handle text input focus
-  const handleTextInputFocus = (inputRef) => {
+  const handleTextInputFocus = (inputRef: 'content' | 'title') => {
     if (inputRef === 'content') {
       setTimeout(() => {
         contentInputRef.current?.focus();
@@ -473,57 +539,57 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
   return (
     <TouchableWithoutFeedback onPress={dismissKeyboard}>
       <KeyboardAvoidingView 
-        style={styles.container} 
+        style={[styles.container, { backgroundColor: theme.background }]} 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <StatusBar barStyle="dark-content" backgroundColor="#C8A882" />
+        <StatusBar barStyle="dark-content" backgroundColor={theme.tint} />
         
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.dateTime}>{getCurrentDate()}</Text>
+        <View style={[styles.header, { backgroundColor: theme.tint }]}>
+          <Text style={[styles.dateTime, { color: theme.text }]}>{getCurrentDate()}</Text>
           <View style={styles.headerControls}>
             {isKeyboardVisible && (
-              <TouchableOpacity style={styles.keyboardDismissButton} onPress={dismissKeyboard}>
-                <Text style={styles.keyboardDismissText}>⌨️ ↓</Text>
+              <TouchableOpacity style={[styles.keyboardDismissButton, { backgroundColor: theme.pastelPink }]} onPress={dismissKeyboard}>
+                <Text style={[styles.keyboardDismissText, { color: theme.text }]}>⌨️ ↓</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity style={styles.headerButton} onPress={handleCancel}>
-              <Text style={styles.headerButtonText}>✕</Text>
+              <Text style={[styles.headerButtonText, { color: theme.text }]}>✕</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.doneButton} onPress={handleSave}>
-              <Text style={styles.doneButtonText}>Done</Text>
+            <TouchableOpacity style={[styles.doneButton, { backgroundColor: theme.pastelPink }]} onPress={handleSave}>
+              <Text style={[styles.doneButtonText, { color: theme.text }]}>Done</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Content Area */}
         <ScrollView 
-          style={styles.contentContainer} 
+          style={[styles.contentContainer, { backgroundColor: theme.background }]} 
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: isKeyboardVisible ? 100 : 20 }}
         >
           {/* Journal Header */}
-          <View style={styles.journalHeader}>
-            <Text style={styles.journalTitle}>Journal</Text>
+          <View style={[styles.journalHeader, { borderBottomColor: theme.pastelPink }]}>
+            <Text style={[styles.journalTitle, { color: theme.text }]}>Journal</Text>
             <TouchableOpacity onPress={() => setLocation('Current Location')}>
-              <Text style={styles.addLocationText}>Add location?</Text>
+              <Text style={[styles.addLocationText, { color: theme.tint }]}>Add location?</Text>
             </TouchableOpacity>
           </View>
 
           {/* Category Selection */}
-          <View style={styles.categoryContainer}>
-            <Text style={styles.categoryLabel}>Category</Text>
+          <View style={[styles.categoryContainer, { borderBottomColor: theme.pastelPink }]}>
+            <Text style={[styles.categoryLabel, { color: theme.text }]}>Category</Text>
             <TouchableOpacity 
-              style={styles.categorySelector}
+              style={[styles.categorySelector, { backgroundColor: theme.pastelPink }]}
               onPress={() => setShowCategoryModal(true)}
             >
               <View style={styles.categoryDisplay}>
                 <Text style={styles.categoryIcon}>{categoryInfo.icon}</Text>
-                <Text style={styles.categoryText}>{categoryInfo.label}</Text>
+                <Text style={[styles.categoryText, { color: theme.text }]}>{categoryInfo.label}</Text>
               </View>
-              <Text style={styles.categoryChevron}>›</Text>
+              <Text style={[styles.categoryChevron, { color: theme.tint }]}>›</Text>
             </TouchableOpacity>
           </View>
 
@@ -531,9 +597,9 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
           <View style={styles.textInputContainer}>
             <TextInput
               ref={textInputRef}
-              style={styles.titleInput}
+              style={[styles.titleInput, { color: theme.text }]}
               placeholder="Title"
-              placeholderTextColor="#A68A68"
+              placeholderTextColor={theme.tabIconDefault}
               value={title}
               onChangeText={setTitle}
               multiline
@@ -544,9 +610,9 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
             
             <TextInput
               ref={contentInputRef}
-              style={styles.contentInput}
+              style={[styles.contentInput, { color: theme.text }]}
               placeholder="What's on your mind?"
-              placeholderTextColor="#9C7F5F"
+              placeholderTextColor={theme.tabIconDefault}
               value={content}
               onChangeText={setContent}
               multiline
@@ -559,22 +625,22 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
           {/* Photo Gallery */}
           {photos.length > 0 && (
             <View style={styles.photoGallery}>
-              <Text style={styles.photoGalleryTitle}>Photos ({photos.length})</Text>
+              <Text style={[styles.photoGalleryTitle, { color: theme.text }]}>Photos ({photos.length})</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {photos.map((photo, index) => (
                   <View key={index} style={styles.photoItem}>
                     <Image source={{ uri: photo.uri }} style={styles.photoImage} />
                     <TouchableOpacity 
-                      style={styles.removePhotoButton}
+                      style={[styles.removePhotoButton, { backgroundColor: theme.tint }]}
                       onPress={() => handleRemovePhoto(index)}
                     >
-                      <Text style={styles.removePhotoText}>×</Text>
+                      <Text style={[styles.removePhotoText, { color: theme.text }]}>×</Text>
                     </TouchableOpacity>
                   </View>
                 ))}
                 {/* Add more photos button */}
-                <TouchableOpacity style={styles.addPhotoButton} onPress={handleQuickPhotoAdd}>
-                  <Text style={styles.addPhotoText}>+</Text>
+                <TouchableOpacity style={[styles.addPhotoButton, { backgroundColor: theme.background, borderColor: theme.tint }]} onPress={handleQuickPhotoAdd}>
+                  <Text style={[styles.addPhotoText, { color: theme.tint }]}>+</Text>
                 </TouchableOpacity>
               </ScrollView>
             </View>
@@ -582,67 +648,67 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
 
           {/* Location Display */}
           {location && (
-            <View style={styles.locationContainer}>
+            <View style={[styles.locationContainer, { backgroundColor: theme.pastelPink }]}>
               <Text style={styles.locationIcon}>📍</Text>
-              <Text style={styles.locationText}>{location}</Text>
+              <Text style={[styles.locationText, { color: theme.text }]}>{location}</Text>
             </View>
           )}
         </ScrollView>
 
         {/* Bottom Controls - Hidden when keyboard is visible */}
         {!isKeyboardVisible && (
-          <View style={styles.bottomControls}>
-            <View style={styles.mediaControls}>
+          <View style={[styles.bottomControls, { backgroundColor: theme.pastelBlue }]}>
+            <View style={[styles.mediaControls, { backgroundColor: theme.pastelPink }]}>
               <TouchableOpacity 
-                style={[styles.mediaButton, activeTab === 'photos' && styles.activeMediaButton]}
+                style={[styles.mediaButton, activeTab === 'photos' && { backgroundColor: theme.tint }]}
                 onPress={() => {
                   setActiveTab('photos');
                   setShowCamera(true);
                 }}
               >
                 <Text style={styles.mediaButtonIcon}>📷</Text>
-                <Text style={styles.mediaButtonText}>Camera</Text>
+                <Text style={[styles.mediaButtonText, { color: theme.text }]}>Camera</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={[styles.mediaButton, activeTab === 'gallery' && styles.activeMediaButton]}
+                style={[styles.mediaButton, activeTab === 'gallery' && { backgroundColor: theme.tint }]}
                 onPress={() => {
                   setActiveTab('gallery');
                   handleImageLibrary();
                 }}
               >
                 <Text style={styles.mediaButtonIcon}>🖼️</Text>
-                <Text style={styles.mediaButtonText}>Gallery</Text>
+                <Text style={[styles.mediaButtonText, { color: theme.text }]}>Gallery</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={[styles.mediaButton, activeTab === 'templates' && styles.activeMediaButton]}
+                style={[styles.mediaButton, activeTab === 'templates' && { backgroundColor: theme.tint }]}
                 onPress={() => setActiveTab('templates')}
               >
                 <Text style={styles.mediaButtonIcon}>📝</Text>
-                <Text style={styles.mediaButtonText}>Templates</Text>
+                <Text style={[styles.mediaButtonText, { color: theme.text }]}>Templates</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
-                style={[styles.mediaButton, activeTab === 'audio' && styles.activeMediaButton]}
+                style={[styles.mediaButton, activeTab === 'audio' && { backgroundColor: theme.tint }]}
                 onPress={() => setActiveTab('audio')}
               >
                 <Text style={styles.mediaButtonIcon}>🎤</Text>
-                <Text style={styles.mediaButtonText}>Audio</Text>
+                <Text style={[styles.mediaButtonText, { color: theme.text }]}>Audio</Text>
               </TouchableOpacity>
             </View>
             
             <TouchableOpacity style={styles.moreButton}>
-              <Text style={styles.moreButtonText}>⌄ More</Text>
+              <Text style={[styles.moreButtonText, { color: theme.tint }]}>⌄ More</Text>
             </TouchableOpacity>
           </View>
         )}
 
         {/* Keyboard Toolbar when keyboard is visible */}
         {isKeyboardVisible && (
-          <View style={styles.keyboardToolbar}>
-            <TouchableOpacity style={styles.keyboardToolbarButton} onPress={dismissKeyboard}>
-              <Text style={styles.keyboardToolbarText}>Done</Text>
+          <View style={[styles.keyboardToolbar, { backgroundColor: theme.pastelPink, borderTopColor: theme.tint }]}>
+            <TouchableOpacity style={[styles.keyboardToolbarButton, { backgroundColor: theme.tint }]} onPress={dismissKeyboard}>
+              <Text style={[styles.keyboardToolbarText, { color: theme.text }]}>Done</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -662,7 +728,6 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F2EE',
   },
   header: {
     flexDirection: 'row',
@@ -671,10 +736,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 60,
     paddingBottom: 16,
-    backgroundColor: '#C8A882',
   },
   dateTime: {
-    color: '#2B2B2B',
     fontSize: 16,
     fontWeight: '500',
   },
@@ -685,11 +748,9 @@ const styles = StyleSheet.create({
   },
   keyboardDismissButton: {
     padding: 8,
-    backgroundColor: '#8B6F47',
     borderRadius: 15,
   },
   keyboardDismissText: {
-    color: '#F5F2EE',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -697,24 +758,20 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   headerButtonText: {
-    color: '#2B2B2B',
     fontSize: 20,
     fontWeight: '600',
   },
   doneButton: {
-    backgroundColor: '#8B6F47',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
   },
   doneButtonText: {
-    color: '#F5F2EE',
     fontSize: 16,
     fontWeight: '600',
   },
   contentContainer: {
     flex: 1,
-    backgroundColor: '#F5F2EE',
   },
   journalHeader: {
     flexDirection: 'row',
@@ -723,15 +780,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E6D7C6',
   },
   journalTitle: {
-    color: '#6B5B4C',
     fontSize: 18,
     fontWeight: '600',
   },
   addLocationText: {
-    color: '#8B6F47',
     fontSize: 16,
     textDecorationLine: 'underline',
   },
@@ -741,14 +795,12 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   titleInput: {
-    color: '#2B2B2B',
     fontSize: 24,
     fontWeight: '600',
     marginBottom: 20,
     minHeight: 40,
   },
   contentInput: {
-    color: '#4A4A4A',
     fontSize: 16,
     lineHeight: 24,
     minHeight: 200,
@@ -759,7 +811,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   photoGalleryTitle: {
-    color: '#6B5B4C',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 16,
@@ -774,7 +825,6 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 12,
-    backgroundColor: '#E6D7C6',
   },
   removePhotoButton: {
     position: 'absolute',
@@ -783,12 +833,10 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#D4A574',
     justifyContent: 'center',
     alignItems: 'center',
   },
   removePhotoText: {
-    color: '#2B2B2B',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -796,17 +844,14 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 12,
-    backgroundColor: '#F5F2EE',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 8,
     marginRight: 16,
     borderWidth: 2,
-    borderColor: '#C8A882',
     borderStyle: 'dashed',
   },
   addPhotoText: {
-    color: '#8B6F47',
     fontSize: 36,
     fontWeight: '300',
   },
@@ -816,7 +861,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 16,
     padding: 12,
-    backgroundColor: '#E6D7C6',
     borderRadius: 8,
   },
   locationIcon: {
@@ -824,11 +868,9 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   locationText: {
-    color: '#4A4A4A',
     fontSize: 14,
   },
   bottomControls: {
-    backgroundColor: '#F0E6D2',
     paddingBottom: 34,
   },
   mediaControls: {
@@ -837,7 +879,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 16,
-    backgroundColor: '#E6D7C6',
     borderRadius: 25,
     marginHorizontal: 16,
     marginTop: 16,
@@ -849,15 +890,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 15,
   },
-  activeMediaButton: {
-    backgroundColor: '#C8A882',
-  },
   mediaButtonIcon: {
     fontSize: 20,
     marginBottom: 4,
   },
   mediaButtonText: {
-    color: '#4A4A4A',
     fontSize: 12,
     fontWeight: '500',
   },
@@ -866,26 +903,21 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   moreButtonText: {
-    color: '#8B6F47',
     fontSize: 16,
   },
   keyboardToolbar: {
-    backgroundColor: '#E6D7C6',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderTopWidth: 1,
-    borderTopColor: '#C8A882',
     flexDirection: 'row',
     justifyContent: 'flex-end',
   },
   keyboardToolbarButton: {
-    backgroundColor: '#8B6F47',
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 15,
   },
   keyboardToolbarText: {
-    color: '#F5F2EE',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -896,7 +928,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#F5F2EE',
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
     paddingHorizontal: 16,
@@ -914,10 +945,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E6D7C6',
+    borderBottomColor: 'rgba(139, 111, 71, 0.15)',
   },
   modalTitle: {
-    color: '#6B5B4C',
     fontSize: 18,
     fontWeight: '600',
   },
@@ -925,12 +955,10 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#E6D7C6',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalCloseText: {
-    color: '#8B6F47',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -939,16 +967,10 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   categoryOption: {
-    backgroundColor: '#E6D7C6',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 2,
-    borderColor: '#E6D7C6',
-  },
-  selectedCategoryOption: {
-    borderColor: '#C8A882',
-    backgroundColor: '#F0E6D2',
   },
   categoryHeader: {
     flexDirection: 'row',
@@ -965,32 +987,23 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   categoryLabel: {
-    color: '#6B5B4C',
     fontSize: 16,
     fontWeight: '600',
   },
-  selectedCategoryLabel: {
-    color: '#8B6F47',
-    fontWeight: '700',
-  },
   categorySelectedIcon: {
-    color: '#8B6F47',
     fontSize: 18,
     fontWeight: '700',
   },
   categoryDescription: {
-    color: '#4A4A4A',
     fontSize: 14,
     lineHeight: 20,
   },
   modalConfirmButton: {
-    backgroundColor: '#8B6F47',
     borderRadius: 20,
     paddingVertical: 12,
     alignItems: 'center',
   },
   modalConfirmText: {
-    color: '#F5F2EE',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -999,13 +1012,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#E6D7C6',
   },
   categorySelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#E6D7C6',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -1016,12 +1027,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryText: {
-    color: '#6B5B4C',
     fontSize: 16,
     marginLeft: 12,
   },
   categoryChevron: {
-    color: '#8B6F47',
     fontSize: 20,
     fontWeight: '600',
   },
@@ -1032,7 +1041,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 30,
-    backgroundColor: '#000000',
     zIndex: 9999,
   },
   cameraViewfinder: {
@@ -1050,7 +1058,6 @@ const styles = StyleSheet.create({
   },
   gridLine: {
     position: 'absolute',
-    backgroundColor: 'rgba(200, 168, 130, 0.4)',
     height: 1,
     left: 0,
     right: 0,
@@ -1082,29 +1089,24 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   cameraText: {
-    color: '#F5F2EE',
     fontSize: 18,
     fontWeight: '600',
     textAlign: 'center',
-    backgroundColor: 'rgba(107, 91, 76, 0.8)',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
   },
   cameraSubtext: {
-    color: '#C8A882',
     fontSize: 16,
     marginBottom: 20,
     textAlign: 'center',
   },
   permissionButton: {
-    backgroundColor: '#C8A882',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 25,
   },
   permissionButtonText: {
-    color: '#2B2B2B',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -1125,12 +1127,10 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#8B6F47',
     justifyContent: 'center',
     alignItems: 'center',
   },
   cameraControlText: {
-    color: '#F5F2EE',
     fontSize: 24,
     fontWeight: '600',
   },
@@ -1138,20 +1138,17 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#8B6F47',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 4,
-    borderColor: '#C8A882',
   },
   shutterButtonActive: {
-    backgroundColor: '#6B5B4C',
+    opacity: 0.7,
   },
   shutterButtonInner: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#C8A882',
   },
 });
 

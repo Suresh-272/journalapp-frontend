@@ -30,6 +30,7 @@ export default function RootLayout() {
         <Stack.Screen name="(splash)" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="journal-detail" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

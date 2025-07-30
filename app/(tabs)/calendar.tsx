@@ -5,70 +5,124 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  TextInput,
-  Modal,
   FlatList,
   SafeAreaView,
   Dimensions,
+  Image,
+  Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
-const CalendarScreen = () => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [entries, setEntries] = useState({});
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showDateModal, setShowDateModal] = useState(false);
-  const [showAddEntryModal, setShowAddEntryModal] = useState(false);
-  const [viewMode, setViewMode] = useState('calendar'); // 'calendar' or 'list'
-  const [theme, setTheme] = useState('default');
-  const [newEntry, setNewEntry] = useState({ text: '', photo: null });
+// Custom color theme matching the app
+const journalTheme = {
+  // Warm, earthy brown and beige colors inspired by the image
+  headerBrown: '#E8DCC8', // Rich brown for header
+  warmBeige: '#F7F3ED', // Very light warm beige background
+  cardBeige: '#F0E8D8', // Light cream for cards and sections
+  controlBeige: '#E8DCC8', // Warm beige for control panels
+  darkBrown: '#5D4E37', // Dark brown for text
+  mediumBrown: '#8B7355', // Medium brown for secondary text
+  warmAccent: '#B8956A', // Warm accent for highlights
+  navBrown: '#6B5B4F', // Dark brown for navigation
+  lightBrown: '#D4C4B0', // Light brown for borders
+  // Additional properties needed for compatibility
+  background: '#F7F3ED', // Same as warmBeige
+  text: '#5D4E37', // Same as darkBrown
+  tint: '#E8DCC8', // Same as controlBeige
+  cardBackground: '#F0E8D8', // Same as cardBeige
+  tabIconDefault: '#8B7355', // Same as mediumBrown
+  pastelPink: '#F0E8D8', // Same as cardBeige
+  pastelBlue: '#E8DCC8', // Same as controlBeige
+};
 
-  // Sample data for demonstration
+// Mock data structure for journal entries
+interface JournalEntry {
+  id: string;
+  date: string;
+  title: string;
+  content: string;
+  images: string[];
+  createdAt: string;
+}
+
+const CalendarScreen = () => {
+  const router = useRouter();
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load journal entries from AsyncStorage
   useEffect(() => {
-    const sampleEntries = {
-      '2024-01-15': [
-        { id: 1, text: 'Morning workout', photo: null, time: '08:00' },
-        { id: 2, text: 'Team meeting', photo: null, time: '14:00' }
-      ],
-      '2024-01-20': [
-        { id: 3, text: 'Dinner with friends', photo: null, time: '19:00' }
-      ],
-      '2024-01-25': [
-        { id: 4, text: 'Project deadline', photo: null, time: '17:00' }
-      ]
-    };
-    setEntries(sampleEntries);
+    loadJournalEntries();
   }, []);
 
-  const themes = {
-    default: {
-      primary: '#B8956A',
-      secondary: '#F7F5F3',
-      text: '#4A4A4A',
-      accent: '#F0EBE6',
-      highlight: '#D4AF7A'
-    },
-    warm: {
-      primary: '#A67C52',
-      secondary: '#F5F1ED',
-      text: '#3C3C3C',
-      accent: '#E8DDD4',
-      highlight: '#C9966B'
-    },
-    cream: {
-      primary: '#9B7B5C',
-      secondary: '#FAF8F6',
-      text: '#2D2D2D',
-      accent: '#F2ECE4',
-      highlight: '#B8956A'
+  const loadJournalEntries = async () => {
+    try {
+      const storedEntries = await AsyncStorage.getItem('journalEntries');
+      if (storedEntries) {
+        setJournalEntries(JSON.parse(storedEntries));
+      } else {
+        // Initialize with sample data
+        const sampleEntries: JournalEntry[] = [
+          {
+            id: '1',
+            date: '2024-01-15',
+            title: 'Morning Coffee',
+            content: 'Started the day with a perfect cup of coffee',
+            images: ['https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=150&h=150&fit=crop'],
+            createdAt: '2024-01-15T08:00:00Z'
+          },
+          {
+            id: '2',
+            date: '2024-01-15',
+            title: 'Sunset Walk',
+            content: 'Beautiful evening walk in the park',
+            images: ['https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=150&h=150&fit=crop'],
+            createdAt: '2024-01-15T18:30:00Z'
+          },
+          {
+            id: '3',
+            date: '2024-01-20',
+            title: 'Garden Visit',
+            content: 'Visited the botanical gardens today',
+            images: ['https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=150&h=150&fit=crop'],
+            createdAt: '2024-01-20T14:00:00Z'
+          },
+          {
+            id: '4',
+            date: '2024-01-25',
+            title: 'Book Reading',
+            content: 'Spent the afternoon reading my favorite book',
+            images: [],
+            createdAt: '2024-01-25T16:00:00Z'
+          },
+          {
+            id: '5',
+            date: '2024-01-28',
+            title: 'Cooking Adventure',
+            content: 'Tried a new recipe today',
+            images: [
+              'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=150&h=150&fit=crop',
+              'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=150&h=150&fit=crop'
+            ],
+            createdAt: '2024-01-28T19:00:00Z'
+          }
+        ];
+        setJournalEntries(sampleEntries);
+        await AsyncStorage.setItem('journalEntries', JSON.stringify(sampleEntries));
+      }
+    } catch (error) {
+      console.error('Error loading journal entries:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const currentTheme = themes[theme];
-
-  const getDaysInMonth = (date) => {
+  const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
     const firstDay = new Date(year, month, 1);
@@ -91,144 +145,62 @@ const CalendarScreen = () => {
     return days;
   };
 
-  const formatDateKey = (date, day) => {
+  const formatDateKey = (date: Date, day: number) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const dayStr = String(day).padStart(2, '0');
     return `${year}-${month}-${dayStr}`;
   };
 
-  const hasEntriesForDate = (date, day) => {
+  const getEntriesForDate = (date: Date, day: number) => {
     const dateKey = formatDateKey(date, day);
-    return entries[dateKey] && entries[dateKey].length > 0;
+    return journalEntries.filter(entry => entry.date === dateKey);
   };
 
-  const getEntriesForDate = (date, day) => {
-    const dateKey = formatDateKey(date, day);
-    return entries[dateKey] || [];
+  const hasEntriesForDate = (date: Date, day: number) => {
+    const entries = getEntriesForDate(date, day);
+    return entries.length > 0;
   };
 
-  const navigateMonth = (direction) => {
+  const hasImagesForDate = (date: Date, day: number) => {
+    const entries = getEntriesForDate(date, day);
+    return entries.some(entry => entry.images.length > 0);
+  };
+
+  const getFirstImageForDate = (date: Date, day: number) => {
+    const entries = getEntriesForDate(date, day);
+    for (const entry of entries) {
+      if (entry.images.length > 0) {
+        return entry.images[0];
+      }
+    }
+    return null;
+  };
+
+  const isToday = (date: Date, day: number) => {
+    const today = new Date();
+    return date.getMonth() === today.getMonth() && 
+           date.getFullYear() === today.getFullYear() && 
+           day === today.getDate();
+  };
+
+  const navigateMonth = (direction: number) => {
     const newDate = new Date(currentDate);
     newDate.setMonth(currentDate.getMonth() + direction);
     setCurrentDate(newDate);
+    setSelectedDate(null);
   };
 
-  const handleDatePress = (day) => {
+  const handleDatePress = (day: number) => {
     if (day) {
       const dateKey = formatDateKey(currentDate, day);
-      setSelectedDate({ date: currentDate, day, dateKey });
-      setShowDateModal(true);
+      setSelectedDate(dateKey);
     }
   };
 
-  const addEntry = () => {
-    if (newEntry.text.trim() && selectedDate) {
-      const entry = {
-        id: Date.now(),
-        text: newEntry.text,
-        photo: newEntry.photo,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      
-      setEntries(prev => ({
-        ...prev,
-        [selectedDate.dateKey]: [...(prev[selectedDate.dateKey] || []), entry]
-      }));
-      
-      setNewEntry({ text: '', photo: null });
-      setShowAddEntryModal(false);
-    }
-  };
-
-  const deleteEntry = (entryId) => {
-    if (selectedDate) {
-      setEntries(prev => ({
-        ...prev,
-        [selectedDate.dateKey]: prev[selectedDate.dateKey].filter(entry => entry.id !== entryId)
-      }));
-    }
-  };
-
-  const searchEntries = () => {
-    if (!searchQuery.trim()) return [];
-    
-    const results = [];
-    Object.keys(entries).forEach(dateKey => {
-      entries[dateKey].forEach(entry => {
-        if (entry.text.toLowerCase().includes(searchQuery.toLowerCase())) {
-          results.push({ ...entry, date: dateKey });
-        }
-      });
-    });
-    return results;
-  };
-
-  const renderCalendarDay = (day, index) => {
-    const hasEntries = day && hasEntriesForDate(currentDate, day);
-    const dayEntries = day ? getEntriesForDate(currentDate, day) : [];
-    
-    return (
-      <TouchableOpacity
-        key={index}
-        style={[
-          styles.dayCell,
-          { backgroundColor: currentTheme.secondary },
-          hasEntries && { backgroundColor: currentTheme.accent }
-        ]}
-        onPress={() => handleDatePress(day)}
-        disabled={!day}
-      >
-        {day && (
-          <>
-            <Text style={[styles.dayText, { color: currentTheme.text }]}>
-              {day}
-            </Text>
-            {hasEntries && (
-              <View style={styles.entryPreview}>
-                <View style={[styles.entryDot, { backgroundColor: currentTheme.highlight }]} />
-                {dayEntries.length > 1 && (
-                  <Text style={[styles.entryCount, { color: currentTheme.text }]}>
-                    +{dayEntries.length - 1}
-                  </Text>
-                )}
-              </View>
-            )}
-          </>
-        )}
-      </TouchableOpacity>
-    );
-  };
-
-  const renderListView = () => {
-    const allEntries = [];
-    Object.keys(entries).forEach(dateKey => {
-      entries[dateKey].forEach(entry => {
-        allEntries.push({ ...entry, date: dateKey });
-      });
-    });
-    
-    allEntries.sort((a, b) => new Date(a.date) - new Date(b.date));
-    
-    return (
-      <FlatList
-        data={allEntries}
-        keyExtractor={(item) => `${item.date}-${item.id}`}
-        renderItem={({ item }) => (
-          <View style={[styles.listItem, { backgroundColor: currentTheme.secondary }]}>
-            <Text style={[styles.listDate, { color: currentTheme.primary }]}>
-              {new Date(item.date).toLocaleDateString()}
-            </Text>
-            <Text style={[styles.listText, { color: currentTheme.text }]}>
-              {item.text}
-            </Text>
-            <Text style={[styles.listTime, { color: currentTheme.text }]}>
-              {item.time}
-            </Text>
-          </View>
-        )}
-      />
-    );
+  const handleEntryPress = (entry: JournalEntry) => {
+    // Navigate to journal detail screen
+    router.push(`/journal-detail?id=${entry.id}` as any);
   };
 
   const monthNames = [
@@ -238,211 +210,191 @@ const CalendarScreen = () => {
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: currentTheme.primary }]}>
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: currentTheme.primary }]}>
-        <Text style={[styles.title, { color: '#FFFFFF' }]}>Calendar</Text>
-        
-        {/* Theme Selector */}
-        <View style={styles.themeContainer}>
-          {Object.keys(themes).map(themeKey => (
-            <TouchableOpacity
-              key={themeKey}
-              style={[
-                styles.themeButton,
-                { backgroundColor: themes[themeKey].primary },
-                theme === themeKey && styles.selectedTheme
-              ]}
-              onPress={() => setTheme(themeKey)}
-            />
-          ))}
-        </View>
-      </View>
+  const renderCalendarDay = (day: number | null, index: number) => {
+    if (!day) {
+      return <View key={index} style={styles.emptyDay} />;
+    }
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={[styles.searchInput, { backgroundColor: currentTheme.secondary, color: currentTheme.text }]}
-          placeholder="Search entries..."
-          placeholderTextColor={currentTheme.text + '80'}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
+    const hasEntries = hasEntriesForDate(currentDate, day);
+    const hasImages = hasImagesForDate(currentDate, day);
+    const firstImage = getFirstImageForDate(currentDate, day);
+    const isTodayDate = isToday(currentDate, day);
+    const entries = getEntriesForDate(currentDate, day);
+
+    return (
+      <TouchableOpacity
+        key={index}
+        style={[
+          styles.dayCell,
+          { backgroundColor: journalTheme.cardBackground },
+          hasEntries && { backgroundColor: journalTheme.pastelPink },
+          isTodayDate && { borderColor: journalTheme.warmAccent, borderWidth: 2 }
+        ]}
+        onPress={() => handleDatePress(day)}
+      >
+        <Text style={[
+          styles.dayText, 
+          { color: journalTheme.text },
+          isTodayDate && { color: journalTheme.warmAccent, fontWeight: 'bold' }
+        ]}>
+          {day}
+        </Text>
+        
+        {hasImages && firstImage && (
+          <View style={styles.imageThumbnail}>
+            <Image 
+              source={{ uri: firstImage }} 
+              style={styles.thumbnailImage}
+              resizeMode="cover"
+            />
+          </View>
+        )}
+        
+        {hasEntries && !hasImages && (
+          <View style={styles.entryIndicator}>
+            <View style={[styles.entryDot, { backgroundColor: journalTheme.warmAccent }]} />
+            {entries.length > 1 && (
+              <Text style={[styles.entryCount, { color: journalTheme.text }]}>
+                +{entries.length - 1}
+              </Text>
+            )}
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  const renderSelectedDateEntries = () => {
+    if (!selectedDate) return null;
+
+    const entries = journalEntries.filter(entry => entry.date === selectedDate);
+    const selectedDateObj = new Date(selectedDate);
+
+    return (
+      <View style={[styles.selectedDateContainer, { backgroundColor: journalTheme.cardBackground }]}>
+        <View style={styles.selectedDateHeader}>
+          <Text style={[styles.selectedDateTitle, { color: journalTheme.text }]}>
+            {monthNames[selectedDateObj.getMonth()]} {selectedDateObj.getDate()}, {selectedDateObj.getFullYear()}
+          </Text>
+          <Text style={[styles.entryCountText, { color: journalTheme.mediumBrown }]}>
+            {entries.length} {entries.length === 1 ? 'entry' : 'entries'}
+          </Text>
+        </View>
+        
+        <FlatList
+          data={entries}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity 
+              style={[styles.entryCard, { backgroundColor: journalTheme.background }]}
+              onPress={() => handleEntryPress(item)}
+              activeOpacity={0.8}
+            >
+              <View style={styles.entryHeader}>
+                <Text style={[styles.entryTitle, { color: journalTheme.text }]}>
+                  {item.title}
+                </Text>
+                <Text style={[styles.entryTime, { color: journalTheme.mediumBrown }]}>
+                  {new Date(item.createdAt).toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })}
+                </Text>
+              </View>
+              
+              <Text style={[styles.entryContent, { color: journalTheme.text }]} numberOfLines={2}>
+                {item.content}
+              </Text>
+              
+              {item.images.length > 0 && (
+                <View style={styles.entryImages}>
+                  {item.images.slice(0, 3).map((image, index) => (
+                    <Image 
+                      key={index}
+                      source={{ uri: image }} 
+                      style={styles.entryImage}
+                      resizeMode="cover"
+                    />
+                  ))}
+                  {item.images.length > 3 && (
+                    <View style={[styles.moreImagesOverlay, { backgroundColor: journalTheme.warmAccent }]}>
+                      <Text style={[styles.moreImagesText, { color: journalTheme.text }]}>
+                        +{item.images.length - 3}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            </TouchableOpacity>
+          )}
+          showsVerticalScrollIndicator={false}
         />
       </View>
+    );
+  };
 
-      {/* Search Results */}
-      {searchQuery.trim() && (
-        <ScrollView style={styles.searchResults}>
-          {searchEntries().map((entry, index) => (
-            <View key={index} style={[styles.searchResult, { backgroundColor: currentTheme.secondary }]}>
-              <Text style={[styles.searchResultDate, { color: currentTheme.primary }]}>
-                {entry.date}
-              </Text>
-              <Text style={[styles.searchResultText, { color: currentTheme.text }]}>
-                {entry.text}
-              </Text>
-            </View>
-          ))}
-        </ScrollView>
-      )}
+  if (loading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: journalTheme.background }]}>
+        <View style={styles.loadingContainer}>
+          <Text style={[styles.loadingText, { color: journalTheme.text }]}>
+            Loading calendar...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
-      {/* View Mode Toggle */}
-      <View style={styles.viewModeContainer}>
-        <TouchableOpacity
-          style={[
-            styles.viewModeButton,
-            { backgroundColor: viewMode === 'calendar' ? currentTheme.primary : currentTheme.secondary }
-          ]}
-          onPress={() => setViewMode('calendar')}
-        >
-          <Text style={[styles.viewModeText, { color: viewMode === 'calendar' ? '#FFFFFF' : currentTheme.text }]}>
-            Calendar
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.viewModeButton,
-            { backgroundColor: viewMode === 'list' ? currentTheme.primary : currentTheme.secondary }
-          ]}
-          onPress={() => setViewMode('list')}
-        >
-          <Text style={[styles.viewModeText, { color: viewMode === 'list' ? '#FFFFFF' : currentTheme.text }]}>
-            List
-          </Text>
-        </TouchableOpacity>
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: journalTheme.background }]}>
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: journalTheme.headerBrown }]}>
+        <Text style={[styles.title, { color: journalTheme.text }]}>Calendar</Text>
       </View>
 
-      {viewMode === 'calendar' ? (
-        <>
+      {/* Main Content */}
+      <View style={styles.mainContent}>
+        {/* Calendar Section */}
+        <View style={styles.calendarSection}>
           {/* Calendar Navigation */}
-          <View style={styles.navigation}>
+          <View style={[styles.navigation, { backgroundColor: journalTheme.cardBackground }]}>
             <TouchableOpacity
-              style={[styles.navButton, { backgroundColor: currentTheme.primary }]}
+              style={[styles.navButton, { backgroundColor: journalTheme.warmAccent }]}
               onPress={() => navigateMonth(-1)}
             >
-              <Text style={[styles.navButtonText, { color: '#FFFFFF' }]}>{'<'}</Text>
+              <Text style={[styles.navButtonText, { color: journalTheme.text }]}>{'‹'}</Text>
             </TouchableOpacity>
             
-            <Text style={[styles.monthYear, { color: currentTheme.text }]}>
+            <Text style={[styles.monthYear, { color: journalTheme.text }]}>
               {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
             </Text>
             
             <TouchableOpacity
-              style={[styles.navButton, { backgroundColor: currentTheme.primary }]}
+              style={[styles.navButton, { backgroundColor: journalTheme.warmAccent }]}
               onPress={() => navigateMonth(1)}
             >
-              <Text style={[styles.navButtonText, { color: '#FFFFFF' }]}>{'>'}</Text>
+              <Text style={[styles.navButtonText, { color: journalTheme.text }]}>{'›'}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Week Days Header */}
-          <View style={styles.weekDaysContainer}>
+          <View style={[styles.weekDaysContainer, { backgroundColor: journalTheme.cardBackground }]}>
             {weekDays.map(day => (
-              <Text key={day} style={[styles.weekDay, { color: currentTheme.text }]}>
+              <Text key={day} style={[styles.weekDay, { color: journalTheme.text }]}>
                 {day}
               </Text>
             ))}
           </View>
 
           {/* Calendar Grid */}
-          <View style={styles.calendarGrid}>
+          <View style={[styles.calendarGrid, { backgroundColor: journalTheme.cardBackground }]}>
             {getDaysInMonth(currentDate).map((day, index) => renderCalendarDay(day, index))}
           </View>
-        </>
-      ) : (
-        renderListView()
-      )}
-
-      {/* Date Detail Modal */}
-      <Modal
-        visible={showDateModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowDateModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: currentTheme.secondary }]}>
-            <Text style={[styles.modalTitle, { color: currentTheme.text }]}>
-              {selectedDate && `${monthNames[selectedDate.date.getMonth()]} ${selectedDate.day}, ${selectedDate.date.getFullYear()}`}
-            </Text>
-            
-            <ScrollView style={styles.entriesContainer}>
-              {selectedDate && getEntriesForDate(selectedDate.date, selectedDate.day).map(entry => (
-                <View key={entry.id} style={[styles.entryItem, { backgroundColor: currentTheme.accent }]}>
-                  <Text style={[styles.entryTime, { color: currentTheme.primary }]}>
-                    {entry.time}
-                  </Text>
-                  <Text style={[styles.entryText, { color: currentTheme.text }]}>
-                    {entry.text}
-                  </Text>
-                  <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => deleteEntry(entry.id)}
-                  >
-                    <Text style={styles.deleteButtonText}>Delete</Text>
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </ScrollView>
-            
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.addButton, { backgroundColor: currentTheme.primary }]}
-                onPress={() => setShowAddEntryModal(true)}
-              >
-                <Text style={[styles.addButtonText, { color: '#FFFFFF' }]}>Add Entry</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.closeButton, { backgroundColor: currentTheme.secondary }]}
-                onPress={() => setShowDateModal(false)}
-              >
-                <Text style={[styles.closeButtonText, { color: currentTheme.text }]}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
         </View>
-      </Modal>
 
-      {/* Add Entry Modal */}
-      <Modal
-        visible={showAddEntryModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowAddEntryModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: currentTheme.secondary }]}>
-            <Text style={[styles.modalTitle, { color: currentTheme.text }]}>Add New Entry</Text>
-            
-            <TextInput
-              style={[styles.entryInput, { backgroundColor: currentTheme.accent, color: currentTheme.text }]}
-              placeholder="Enter your journal entry..."
-              placeholderTextColor={currentTheme.text + '80'}
-              value={newEntry.text}
-              onChangeText={(text) => setNewEntry(prev => ({ ...prev, text }))}
-              multiline
-            />
-            
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.addButton, { backgroundColor: currentTheme.primary }]}
-                onPress={addEntry}
-              >
-                <Text style={[styles.addButtonText, { color: '#FFFFFF' }]}>Save Entry</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[styles.closeButton, { backgroundColor: currentTheme.secondary }]}
-                onPress={() => setShowAddEntryModal(false)}
-              >
-                <Text style={[styles.closeButtonText, { color: currentTheme.text }]}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        {/* Selected Date Entries */}
+        {renderSelectedDateEntries()}
+      </View>
     </SafeAreaView>
   );
 };
@@ -451,78 +403,37 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+  },
+  header: {
     paddingHorizontal: 20,
     paddingVertical: 15,
+    paddingTop: 60,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
-  themeContainer: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  themeButton: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-  },
-  selectedTheme: {
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  searchContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 10,
-  },
-  searchInput: {
-    padding: 10,
-    borderRadius: 8,
-    fontSize: 16,
-  },
-  searchResults: {
-    maxHeight: 150,
-    paddingHorizontal: 20,
-  },
-  searchResult: {
-    padding: 10,
-    marginBottom: 5,
-    borderRadius: 8,
-  },
-  searchResultDate: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  searchResultText: {
-    fontSize: 14,
-    marginTop: 2,
-  },
-  viewModeContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingBottom: 10,
-    gap: 10,
-  },
-  viewModeButton: {
+  mainContent: {
     flex: 1,
-    padding: 10,
-    borderRadius: 8,
-    alignItems: 'center',
+    flexDirection: 'column',
   },
-  viewModeText: {
-    fontSize: 16,
-    fontWeight: 'bold',
+  calendarSection: {
+    flexShrink: 0,
   },
   navigation: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingVertical: 15,
   },
   navButton: {
     padding: 10,
@@ -531,7 +442,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   navButtonText: {
-    color: '#FFFFFF',
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -554,6 +464,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     paddingHorizontal: 20,
+    paddingBottom: 20,
+    minHeight: 280, // Fixed height for 4-5 weeks with smaller cells
   },
   dayCell: {
     width: (width - 40) / 7,
@@ -563,15 +475,37 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E8DDD4',
     position: 'relative',
+    borderRadius: 8,
+    margin: 1,
+  },
+  emptyDay: {
+    width: (width - 40) / 7,
+    height: 60,
   },
   dayText: {
     fontSize: 16,
     fontWeight: 'bold',
+    marginBottom: 4,
   },
-  entryPreview: {
+  imageThumbnail: {
     position: 'absolute',
-    bottom: 2,
-    right: 2,
+    bottom: 4,
+    right: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+  },
+  thumbnailImage: {
+    width: '100%',
+    height: '100%',
+  },
+  entryIndicator: {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -584,104 +518,75 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginLeft: 2,
   },
-  listItem: {
-    padding: 15,
-    marginHorizontal: 20,
-    marginVertical: 5,
-    borderRadius: 8,
-  },
-  listDate: {
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  listText: {
-    fontSize: 16,
-    marginTop: 5,
-  },
-  listTime: {
-    fontSize: 12,
-    marginTop: 5,
-  },
-  modalOverlay: {
+  selectedDateContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
+    marginTop: 10,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 20,
+  },
+  selectedDateHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 15,
   },
-  modalContent: {
-    width: '90%',
-    maxHeight: '70%',
-    borderRadius: 12,
-    padding: 20,
-  },
-  modalTitle: {
+  selectedDateTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 15,
-    textAlign: 'center',
   },
-  entriesContainer: {
-    maxHeight: 300,
-    marginBottom: 20,
+  entryCountText: {
+    fontSize: 14,
   },
-  entryItem: {
+  entryCard: {
     padding: 15,
     marginBottom: 10,
-    borderRadius: 8,
+    borderRadius: 12,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  entryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  entryTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    flex: 1,
   },
   entryTime: {
     fontSize: 12,
-    fontWeight: 'bold',
   },
-  entryText: {
-    fontSize: 16,
-    marginTop: 5,
+  entryContent: {
+    fontSize: 14,
+    lineHeight: 20,
     marginBottom: 10,
   },
-  deleteButton: {
-    backgroundColor: '#E74C3C',
-    padding: 5,
-    borderRadius: 5,
-    alignSelf: 'flex-end',
-  },
-  deleteButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-  },
-  modalButtons: {
+  entryImages: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
-  addButton: {
-    flex: 1,
-    padding: 12,
+  entryImage: {
+    width: 60,
+    height: 60,
     borderRadius: 8,
+  },
+  moreImagesOverlay: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  addButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+  moreImagesText: {
+    fontSize: 12,
     fontWeight: 'bold',
-  },
-  closeButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  closeButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  entryInput: {
-    padding: 12,
-    borderRadius: 8,
-    fontSize: 16,
-    minHeight: 100,
-    textAlignVertical: 'top',
-    marginBottom: 20,
   },
 });
 

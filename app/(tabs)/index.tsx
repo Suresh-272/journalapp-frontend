@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, FlatList, TouchableOpacity, View, Animated, Alert, RefreshControl } from 'react-native';
+import { StyleSheet, FlatList, TouchableOpacity, View, Animated, Alert, RefreshControl, ScrollView, Text } from 'react-native';
 
 import { GlassCard } from '@/components/GlassCard';
 import { ThemedText } from '@/components/ThemedText';
@@ -10,6 +10,28 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { getJournals } from '@/services/journalService';
+
+// Custom color theme for the journal entries screen - matching new-entry theme
+const journalTheme = {
+  // Warm, earthy brown and beige colors inspired by the image
+  headerBrown: '#8B6B4C', // Rich brown for header
+  warmBeige: '#F7F3ED', // Very light warm beige background
+  cardBeige: '#FFFFFF', // Pure white for cards - lighter container
+  controlBeige: '#E8DCC8', // Warm beige for control panels
+  darkBrown: '#3D2F22', // Darker brown for better text contrast
+  mediumBrown: '#6B5643', // Medium brown for secondary text - darker
+  warmAccent: '#B8956A', // Warm accent for highlights
+  navBrown: '#6B5B4F', // Dark brown for navigation
+  lightBrown: '#D4C4B0', // Light brown for borders
+  // Additional properties needed for compatibility
+  background: '#F7F3ED', // Same as warmBeige
+  text: '#3D2F22', // Same as darkBrown - darker for better contrast
+  tint: '#E8DCC8', // Same as controlBeige
+  cardBackground: '#FFFFFF', // Pure white for better contrast
+  tabIconDefault: '#6B5643', // Darker for better visibility
+  pastelPink: '#F5F1EC', // Very light beige for mood container
+  pastelBlue: '#E8DCC8', // Same as controlBeige
+};
 
 // TypeScript interfaces
 interface JournalEntry {
@@ -64,9 +86,15 @@ export default function EntriesScreen() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'personal' | 'professional'>('all');
 
   // Get current theme colors
-  const theme = Colors[colorScheme ?? 'light'];
+  const theme = journalTheme;
+
+  // Filter journals by selected category
+  const filteredJournals = selectedCategory === 'all' 
+    ? journals 
+    : journals.filter(journal => journal.category === selectedCategory);
 
   // Fetch journal entries
   const fetchJournals = async (page = 1, isRefresh = false) => {
@@ -158,14 +186,21 @@ export default function EntriesScreen() {
     return (
       <TouchableOpacity 
         style={styles.entryContainer}
-        onPress={() => router.push(`/entry/${item._id}` as any)}
+        onPress={() => router.push(`/journal-detail?id=${item._id}` as any)}
         activeOpacity={0.8}
       >
         <GlassCard style={[styles.entryCard, { backgroundColor: theme.cardBackground }] as any}>
           <View style={styles.entryHeader}>
-            <ThemedText type="journalTitle" style={[styles.titleText, { color: theme.text }]}>
-              {item.title}
-            </ThemedText>
+            <View style={styles.titleContainer}>
+              <ThemedText type="journalTitle" style={[styles.titleText, { color: theme.text }]}>
+                {item.title}
+              </ThemedText>
+              <View style={[styles.categoryBadge, { backgroundColor: theme.pastelPink }]}>
+                <ThemedText style={[styles.categoryBadgeText, { color: theme.mediumBrown }]}>
+                  {item.category === 'personal' ? '👤' : '💼'} {item.category}
+                </ThemedText>
+              </View>
+            </View>
             <ThemedText style={[styles.dateText, { color: theme.tabIconDefault }]}>{formattedDate}</ThemedText>
           </View>
           
@@ -236,6 +271,61 @@ export default function EntriesScreen() {
           <ThemedText style={[styles.inspireButtonText, { color: theme.text }]}>Inspire Me</ThemedText>
         </TouchableOpacity>
       </View>
+
+      {/* Category Filter */}
+      <View style={styles.categoryFilterContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryFilterScroll}>
+          <TouchableOpacity 
+            style={[
+              styles.categoryFilterButton, 
+              { backgroundColor: selectedCategory === 'all' ? theme.warmAccent : theme.cardBackground },
+              { borderColor: theme.lightBrown }
+            ]}
+            onPress={() => setSelectedCategory('all')}
+          >
+            <ThemedText style={[
+              styles.categoryFilterText, 
+              { color: selectedCategory === 'all' ? theme.text : theme.mediumBrown }
+            ]}>
+              All
+            </ThemedText>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[
+              styles.categoryFilterButton, 
+              { backgroundColor: selectedCategory === 'personal' ? theme.warmAccent : theme.cardBackground },
+              { borderColor: theme.lightBrown }
+            ]}
+            onPress={() => setSelectedCategory('personal')}
+          >
+            <ThemedText style={styles.categoryFilterIcon}>👤</ThemedText>
+            <ThemedText style={[
+              styles.categoryFilterText, 
+              { color: selectedCategory === 'personal' ? theme.text : theme.mediumBrown }
+            ]}>
+              Personal
+            </ThemedText>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[
+              styles.categoryFilterButton, 
+              { backgroundColor: selectedCategory === 'professional' ? theme.warmAccent : theme.cardBackground },
+              { borderColor: theme.lightBrown }
+            ]}
+            onPress={() => setSelectedCategory('professional')}
+          >
+            <ThemedText style={styles.categoryFilterIcon}>💼</ThemedText>
+            <ThemedText style={[
+              styles.categoryFilterText, 
+              { color: selectedCategory === 'professional' ? theme.text : theme.mediumBrown }
+            ]}>
+              Professional
+            </ThemedText>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
       
       {error && (
         <View style={styles.errorContainer}>
@@ -247,7 +337,7 @@ export default function EntriesScreen() {
       )}
       
       <FlatList
-        data={journals}
+        data={filteredJournals}
         renderItem={renderJournalEntry}
         keyExtractor={(item) => item._id}
         contentContainerStyle={styles.listContainer}
@@ -364,22 +454,38 @@ const styles = StyleSheet.create({
   },
   entryCard: {
     borderRadius: 16,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
     borderWidth: 1,
-    borderColor: 'rgba(139, 111, 71, 0.1)',
+    borderColor: 'rgba(139, 111, 71, 0.08)',
   },
   entryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 8,
+  },
+  titleContainer: {
+    flex: 1,
+    marginRight: 12,
   },
   titleText: {
     fontWeight: '600',
     fontSize: 18,
+    marginBottom: 4,
+  },
+  categoryBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  categoryBadgeText: {
+    fontSize: 12,
+    fontWeight: '500',
+    textTransform: 'capitalize',
   },
   dateText: {
     fontSize: 14,
@@ -389,6 +495,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 15,
     lineHeight: 20,
+    opacity: 0.85,
   },
   entryFooter: {
     flexDirection: 'row',
@@ -402,7 +509,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(139, 111, 71, 0.2)',
+    borderColor: 'rgba(139, 111, 71, 0.15)',
   },
   moodEmoji: {
     fontSize: 20,
@@ -426,5 +533,29 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 6,
     elevation: 8,
+  },
+  categoryFilterContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 15,
+  },
+  categoryFilterScroll: {
+    paddingHorizontal: 0,
+  },
+  categoryFilterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginRight: 10,
+  },
+  categoryFilterIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  categoryFilterText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
