@@ -602,7 +602,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontFamily: 'DancingScript-SemiBold',
+    fontFamily: 'Inter-Bold',
     lineHeight: 26,
   },
   headerControls: {
@@ -660,7 +660,7 @@ const styles = StyleSheet.create({
   },
   categoryLabel: {
     fontSize: 18,
-    fontFamily: 'Caveat-Medium',
+    fontFamily: 'Inter-SemiBold',
     marginBottom: 8,
     lineHeight: 24,
   },
@@ -678,7 +678,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 18,
-    fontFamily: 'Handlee-Regular',
+    fontFamily: 'Inter-Regular',
     marginLeft: 12,
     lineHeight: 24,
   },
@@ -696,14 +696,14 @@ const styles = StyleSheet.create({
   },
   titleInput: {
     fontSize: 26,
-    fontFamily: 'Caveat-Bold',
+    fontFamily: 'Inter-Bold',
     marginBottom: 20,
     minHeight: 40,
     lineHeight: 34,
   },
   contentInput: {
     fontSize: 18,
-    fontFamily: 'Caveat-Regular',
+    fontFamily: 'Inter-Regular',
     lineHeight: 28,
     minHeight: 200,
     textAlignVertical: 'top',
@@ -714,7 +714,7 @@ const styles = StyleSheet.create({
   },
   photoGalleryTitle: {
     fontSize: 18,
-    fontFamily: 'Handlee-Regular',
+    fontFamily: 'Inter-SemiBold',
     marginLeft: 16,
     marginBottom: 12,
     lineHeight: 24,

@@ -700,7 +700,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 18,
-    fontFamily: 'Caveat-Regular',
+    fontFamily: 'Inter-Regular',
     color: '#8B7B6B', // Medium brown
     lineHeight: 24,
   },
@@ -727,14 +727,14 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     fontSize: 26,
-    fontFamily: 'AmaticSC-Bold',
+    fontFamily: 'Inter-Bold',
     color: '#6A5A4B', // Dark brown
     marginBottom: 4,
     lineHeight: 32,
   },
   statLabel: {
     fontSize: 14,
-    fontFamily: 'PatrickHand-Regular',
+    fontFamily: 'Inter-Medium',
     color: '#8B7B6B', // Medium brown
     textAlign: 'center',
     lineHeight: 18,
@@ -760,7 +760,7 @@ const styles = StyleSheet.create({
   },
   averageMoodTitle: {
     fontSize: 20,
-    fontFamily: 'Handlee-Regular',
+    fontFamily: 'Inter-SemiBold',
     color: '#6A5A4B', // Dark brown
     marginBottom: 10,
     lineHeight: 26,
@@ -807,7 +807,7 @@ const styles = StyleSheet.create({
   insightsText: {
     flex: 1,
     fontSize: 16,
-    fontFamily: 'Caveat-Regular',
+    fontFamily: 'Inter-Regular',
     color: '#6A5A4B',
     lineHeight: 24,
   },
@@ -827,14 +827,14 @@ const styles = StyleSheet.create({
   },
   promptsTitle: {
     fontSize: 18,
-    fontFamily: 'Handlee-Regular',
+    fontFamily: 'Inter-SemiBold',
     color: '#6A5A4B',
     marginBottom: 10,
     lineHeight: 24,
   },
   promptText: {
     fontSize: 16,
-    fontFamily: 'Caveat-Regular',
+    fontFamily: 'Inter-Regular',
     color: '#6A5A4B',
     marginBottom: 5,
     lineHeight: 24,

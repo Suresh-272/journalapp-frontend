@@ -520,7 +520,7 @@ const styles = StyleSheet.create({
   entriesTitle: {
     marginBottom: 12,
     fontSize: 20,
-    fontFamily: 'Handlee-Regular',
+    fontFamily: 'Inter-SemiBold',
     lineHeight: 26,
   },
   entrySummary: {

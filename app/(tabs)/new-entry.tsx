@@ -782,13 +782,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   journalTitle: {
-    fontSize: 22,
-    fontFamily: 'DancingScript-Bold',
-    lineHeight: 30,
+    fontSize: 20,
+    fontFamily: 'Inter-Bold',
+    lineHeight: 26,
   },
   addLocationText: {
     fontSize: 16,
-    fontFamily: 'PatrickHand-Regular',
+    fontFamily: 'Inter-Medium',
     textDecorationLine: 'underline',
     lineHeight: 22,
   },
@@ -817,7 +817,7 @@ const styles = StyleSheet.create({
   },
   photoGalleryTitle: {
     fontSize: 18,
-    fontFamily: 'Handlee-Regular',
+    fontFamily: 'Inter-SemiBold',
     marginLeft: 16,
     marginBottom: 12,
     lineHeight: 24,
@@ -875,7 +875,7 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 16,
-    fontFamily: 'PatrickHand-Regular',
+    fontFamily: 'Inter-Regular',
     lineHeight: 22,
   },
   bottomControls: {
@@ -996,7 +996,7 @@ const styles = StyleSheet.create({
   },
   categoryLabel: {
     fontSize: 18,
-    fontFamily: 'Caveat-Medium',
+    fontFamily: 'Inter-SemiBold',
     lineHeight: 24,
   },
   categorySelectedIcon: {
@@ -1037,7 +1037,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 18,
-    fontFamily: 'Handlee-Regular',
+    fontFamily: 'Inter-Regular',
     marginLeft: 12,
     lineHeight: 24,
   },

@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   inspireButtonText: {
-    fontFamily: 'Handlee-Regular',
+    fontFamily: 'Inter-Medium',
     fontSize: 15,
     lineHeight: 20,
   },
@@ -442,13 +442,13 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 20,
-    fontFamily: 'Caveat-Medium',
+    fontFamily: 'Inter-SemiBold',
     marginBottom: 8,
     lineHeight: 26,
   },
   emptySubtext: {
     fontSize: 16,
-    fontFamily: 'PatrickHand-Regular',
+    fontFamily: 'Inter-Regular',
     lineHeight: 22,
   },
   listContainer: {
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
   },
   categoryBadgeText: {
     fontSize: 13,
-    fontFamily: 'PatrickHand-Regular',
+    fontFamily: 'Inter-Medium',
     textTransform: 'capitalize',
     lineHeight: 18,
   },
@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
   },
   categoryFilterText: {
     fontSize: 15,
-    fontFamily: 'Handlee-Regular',
+    fontFamily: 'Inter-Medium',
     lineHeight: 20,
   },
 });

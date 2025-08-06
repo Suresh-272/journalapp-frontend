@@ -48,12 +48,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     lineHeight: 40,
-    fontFamily: 'DancingScript-Bold', // Beautiful cursive for main titles
+    fontFamily: 'DancingScript-Bold', // Beautiful cursive for main app title only
   },
   subtitle: {
     fontSize: 20,
     lineHeight: 28,
-    fontFamily: 'DancingScript-SemiBold', // Elegant cursive for subtitles
+    fontFamily: 'Inter-Bold', // Clean, professional for subtitles
   },
   link: {
     lineHeight: 30,
@@ -64,11 +64,11 @@ const styles = StyleSheet.create({
   journalTitle: {
     fontSize: 24,
     lineHeight: 32,
-    fontFamily: 'Caveat-Bold', // Expressive handwriting for journal titles
+    fontFamily: 'Caveat-Bold', // Handwriting only for journal entry titles
   },
   journalBody: {
     fontSize: 18,
     lineHeight: 28,
-    fontFamily: 'Caveat-Regular', // Natural handwriting for journal content
+    fontFamily: 'Caveat-Regular', // Handwriting only for journal content
   },
 });
