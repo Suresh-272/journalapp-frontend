@@ -208,3 +208,13 @@ export const createJournalWithMedia = async (journalData, mediaFiles = []) => {
     };
   }
 };
+
+// Get mood analytics for the current user
+export const getMoodAnalytics = async (timeFilter = 'week') => {
+  try {
+    const response = await api.get(`/journals/mood-analytics?timeFilter=${timeFilter}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Failed to fetch mood analytics' };
+  }
+};

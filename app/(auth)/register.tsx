@@ -104,7 +104,7 @@ export default function Register() {
         <StatusBar style="dark" />
         <View style={styles.header}>
           <Image
-            source={require('../../assets/images/logo-new.jpg')}
+            source={require('../../assets/images/logo-final.jpg')}
             style={styles.headerLogo}
           />
           <Text style={styles.title}>Create Account</Text>

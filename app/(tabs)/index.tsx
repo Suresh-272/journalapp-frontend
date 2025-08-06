@@ -390,8 +390,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   headerTitle: {
-    fontWeight: '700',
-    fontSize: 28,
+    fontFamily: 'DancingScript-Bold',
+    fontSize: 32,
+    lineHeight: 40,
   },
   inspireButton: {
     paddingHorizontal: 18,
@@ -403,8 +404,9 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   inspireButtonText: {
-    fontWeight: '600',
-    fontSize: 14,
+    fontFamily: 'Handlee-Regular',
+    fontSize: 15,
+    lineHeight: 20,
   },
   loadingContainer: {
     flex: 1,
@@ -439,12 +441,15 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontFamily: 'Caveat-Medium',
     marginBottom: 8,
+    lineHeight: 26,
   },
   emptySubtext: {
-    fontSize: 14,
+    fontSize: 16,
+    fontFamily: 'PatrickHand-Regular',
+    lineHeight: 22,
   },
   listContainer: {
     padding: 16,
@@ -472,9 +477,10 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   titleText: {
-    fontWeight: '600',
-    fontSize: 18,
+    fontFamily: 'Caveat-Bold',
+    fontSize: 20,
     marginBottom: 4,
+    lineHeight: 26,
   },
   categoryBadge: {
     alignSelf: 'flex-start',
@@ -483,9 +489,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   categoryBadgeText: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 13,
+    fontFamily: 'PatrickHand-Regular',
     textTransform: 'capitalize',
+    lineHeight: 18,
   },
   dateText: {
     fontSize: 14,
@@ -493,8 +500,9 @@ const styles = StyleSheet.create({
   },
   previewText: {
     marginBottom: 12,
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: 16,
+    fontFamily: 'Caveat-Regular',
+    lineHeight: 24,
     opacity: 0.85,
   },
   entryFooter: {
@@ -555,7 +563,8 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   categoryFilterText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontFamily: 'Handlee-Regular',
+    lineHeight: 20,
   },
 });

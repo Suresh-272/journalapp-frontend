@@ -782,12 +782,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   journalTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 22,
+    fontFamily: 'DancingScript-Bold',
+    lineHeight: 30,
   },
   addLocationText: {
     fontSize: 16,
+    fontFamily: 'PatrickHand-Regular',
     textDecorationLine: 'underline',
+    lineHeight: 22,
   },
   textInputContainer: {
     flex: 1,
@@ -795,14 +798,16 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   titleInput: {
-    fontSize: 24,
-    fontWeight: '600',
+    fontSize: 26,
+    fontFamily: 'Caveat-Bold',
     marginBottom: 20,
     minHeight: 40,
+    lineHeight: 34,
   },
   contentInput: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 18,
+    fontFamily: 'Caveat-Regular',
+    lineHeight: 28,
     minHeight: 200,
     textAlignVertical: 'top',
   },
@@ -811,10 +816,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   photoGalleryTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontFamily: 'Handlee-Regular',
     marginLeft: 16,
     marginBottom: 12,
+    lineHeight: 24,
   },
   photoItem: {
     position: 'relative',
@@ -868,7 +874,9 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   locationText: {
-    fontSize: 14,
+    fontSize: 16,
+    fontFamily: 'PatrickHand-Regular',
+    lineHeight: 22,
   },
   bottomControls: {
     paddingBottom: 34,
@@ -987,8 +995,9 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   categoryLabel: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontFamily: 'Caveat-Medium',
+    lineHeight: 24,
   },
   categorySelectedIcon: {
     fontSize: 18,
@@ -1027,8 +1036,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryText: {
-    fontSize: 16,
+    fontSize: 18,
+    fontFamily: 'Handlee-Regular',
     marginLeft: 12,
+    lineHeight: 24,
   },
   categoryChevron: {
     fontSize: 20,

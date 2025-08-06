@@ -47,29 +47,28 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: 'bold',
-    lineHeight: 38,
-    fontFamily: 'PlayfairDisplay-Bold',
+    lineHeight: 40,
+    fontFamily: 'DancingScript-Bold', // Beautiful cursive for main titles
   },
   subtitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    fontFamily: 'PlayfairDisplay-Regular',
+    lineHeight: 28,
+    fontFamily: 'DancingScript-SemiBold', // Elegant cursive for subtitles
   },
   link: {
     lineHeight: 30,
     fontSize: 16,
     color: '#f7c5a8',
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Inter-Medium', // Keep clean for links
   },
   journalTitle: {
     fontSize: 24,
     lineHeight: 32,
-    fontFamily: 'PlayfairDisplay-Bold',
+    fontFamily: 'Caveat-Bold', // Expressive handwriting for journal titles
   },
   journalBody: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontFamily: 'Inter-Regular',
+    fontSize: 18,
+    lineHeight: 28,
+    fontFamily: 'Caveat-Regular', // Natural handwriting for journal content
   },
 });
