@@ -9,14 +9,27 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
-    // SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-    // 'PlayfairDisplay-Regular': require('../assets/fonts/PlayfairDisplay-Regular.ttf'),
-    // 'PlayfairDisplay-Bold': require('../assets/fonts/PlayfairDisplay-Bold.ttf'),
-    // 'PlayfairDisplay-Italic': require('../assets/fonts/PlayfairDisplay-Italic.ttf'),
-    // 'Inter-Regular': require('../assets/fonts/Inter_18pt-Regular.ttf'),
-    // 'Inter-Medium': require('../assets/fonts/Inter_24pt-Medium.ttf'),
-    // 'Inter-SemiBold': require('../assets/fonts/Inter_24pt-Regular.ttf'),
-    // 'Inter-Bold': require('../assets/fonts/Inter_24pt-Bold.ttf'),
+    // Handwriting fonts for journal aesthetic
+    'PatrickHand-Regular': require('../assets/fonts/PatrickHand-Regular.ttf'),
+    'Caveat-Regular': require('../assets/fonts/Caveat-Regular.ttf'),
+    'Caveat-Medium': require('../assets/fonts/Caveat-Medium.ttf'),
+    'Caveat-Bold': require('../assets/fonts/Caveat-Bold.ttf'),
+    'DancingScript-Regular': require('../assets/fonts/DancingScript-Regular.ttf'),
+    'DancingScript-Medium': require('../assets/fonts/DancingScript-Medium.ttf'),
+    'DancingScript-SemiBold': require('../assets/fonts/DancingScript-SemiBold.ttf'),
+    'DancingScript-Bold': require('../assets/fonts/DancingScript-Bold.ttf'),
+    'Handlee-Regular': require('../assets/fonts/Handlee-Regular.ttf'),
+    'AmaticSC-Regular': require('../assets/fonts/AmaticSC-Regular.ttf'),
+    'AmaticSC-Bold': require('../assets/fonts/AmaticSC-Bold.ttf'),
+    
+    // Keep existing Inter fonts for UI elements that need clean readability
+    'Inter-Regular': require('../assets/fonts/Inter_18pt-Regular.ttf'),
+    'Inter-Medium': require('../assets/fonts/Inter_24pt-Medium.ttf'),
+    'Inter-SemiBold': require('../assets/fonts/Inter_24pt-SemiBold.ttf'),
+    'Inter-Bold': require('../assets/fonts/Inter_24pt-Bold.ttf'),
+    
+    // Keep SpaceMono for code/technical elements if needed
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
   if (!loaded) {

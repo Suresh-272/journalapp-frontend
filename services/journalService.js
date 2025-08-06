@@ -1,6 +1,32 @@
 import api from '../utils/api';
 import * as FileSystem from 'expo-file-system';
 
+// Get all journal entries for the current user
+export const getJournals = async (page = 1, limit = 10, filters = {}) => {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...filters
+    });
+    
+    const response = await api.get(`/journals?${params}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Failed to fetch journal entries' };
+  }
+};
+
+// Get a single journal entry by ID
+export const getJournal = async (journalId) => {
+  try {
+    const response = await api.get(`/journals/${journalId}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Failed to fetch journal entry' };
+  }
+};
+
 // Create a new journal entry
 export const createJournal = async (journalData) => {
   try {
@@ -8,6 +34,26 @@ export const createJournal = async (journalData) => {
     return response.data;
   } catch (error) {
     throw error.response?.data || { error: 'Failed to create journal entry' };
+  }
+};
+
+// Update an existing journal entry
+export const updateJournal = async (journalId, journalData) => {
+  try {
+    const response = await api.put(`/journals/${journalId}`, journalData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Failed to update journal entry' };
+  }
+};
+
+// Delete a journal entry
+export const deleteJournal = async (journalId) => {
+  try {
+    const response = await api.delete(`/journals/${journalId}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Failed to delete journal entry' };
   }
 };
 
@@ -81,65 +127,95 @@ export const uploadMediaWithRetry = async (mediaFile, journalId, caption = '', m
 // Create journal with media in a single request
 export const createJournalWithMedia = async (journalData, mediaFiles = [], entryPassword = null) => {
   try {
+    // Validate journal data
+    if (!journalData.category || !['personal', 'professional'].includes(journalData.category)) {
+      throw new Error('Category must be either "personal" or "professional"');
+    }
+    
     // Create form data
     const formData = new FormData();
     
-    // Add journal data
+    // Add journal data with proper validation
     formData.append('title', journalData.title || 'Untitled Entry');
     formData.append('content', journalData.content || '');
-    if (journalData.mood) formData.append('mood', journalData.mood);
-    if (journalData.location) formData.append('location', journalData.location);
-    if (journalData.tags && journalData.tags.length > 0) {
-      formData.append('tags', JSON.stringify(journalData.tags));
-    }
+    formData.append('category', journalData.category); // Ensure category is always sent
+    formData.append('mood', journalData.mood || 'neutral');
+    formData.append('location', journalData.location || '');
+    formData.append('tags', JSON.stringify(journalData.tags || []));
     
-    // Add protection data
-    formData.append('isProtected', journalData.isProtected || false);
-    if (journalData.isProtected) {
-      formData.append('protectionType', journalData.protectionType || 'password');
-      
-      // Only send password if using password protection
-      if (journalData.protectionType === 'password' && entryPassword) {
-        formData.append('entryPassword', entryPassword);
-      }
-    }
-    
-    // Add media files
+    // Add media files with optimization
     for (let i = 0; i < mediaFiles.length; i++) {
       const mediaFile = mediaFiles[i];
       
-      // Get file info
-      const fileInfo = await FileSystem.getInfoAsync(mediaFile.uri);
-      if (!fileInfo.exists) {
-        throw new Error(`File ${i} does not exist`);
+      try {
+        // Get file info
+        const fileInfo = await FileSystem.getInfoAsync(mediaFile.uri);
+        if (!fileInfo.exists) {
+          throw new Error(`File ${i} does not exist`);
+        }
+        
+        // Check file size (limit to 10MB)
+        if (fileInfo.size > 10 * 1024 * 1024) {
+          throw new Error(`File ${i} is too large. Maximum size is 10MB`);
+        }
+        
+        // Determine file type and name
+        const fileExtension = mediaFile.uri.split('.').pop()?.toLowerCase();
+        const fileName = `${Date.now()}_${i}.${fileExtension}`;
+        
+        // Validate file type
+        const allowedImageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        const allowedVideoTypes = ['mp4', 'mov', 'avi'];
+        const allowedAudioTypes = ['m4a', 'mp3', 'wav'];
+        
+        const isImage = allowedImageTypes.includes(fileExtension);
+        const isVideo = allowedVideoTypes.includes(fileExtension);
+        const isAudio = allowedAudioTypes.includes(fileExtension);
+        
+        if (!isImage && !isVideo && !isAudio) {
+          throw new Error(`File ${i} has unsupported format`);
+        }
+        
+        // Create file object with proper MIME type
+        const file = {
+          uri: mediaFile.uri,
+          name: fileName,
+          type: isImage ? 'image/jpeg' : 
+                isVideo ? 'video/mp4' : 'audio/m4a'
+        };
+        
+        // Append file to form data
+        formData.append('files', file);
+      } catch (fileError) {
+        console.error(`Error processing file ${i}:`, fileError);
+        throw new Error(`Failed to process file ${i}: ${fileError.message}`);
       }
-      
-      // Determine file type and name
-      const fileExtension = mediaFile.uri.split('.').pop();
-      const fileName = `${Date.now()}_${i}.${fileExtension}`;
-      
-      // Create file object
-      const file = {
-        uri: mediaFile.uri,
-        name: fileName,
-        type: mediaFile.type === 'photo' ? 'image/jpeg' : 
-              mediaFile.type === 'video' ? 'video/mp4' : 'audio/m4a'
-      };
-      
-      // Append file to form data
-      formData.append('files', file);
     }
     
-    // Make API request
+    // Make API request with timeout
     const response = await api.post('/journals/with-media', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 30000, // 30 second timeout
     });
     
     return response.data;
   } catch (error) {
-    throw error.response?.data || { error: 'Failed to create journal with media' };
+    console.error('Error creating journal with media:', error);
+    throw error.response?.data || { 
+      error: error.message || 'Failed to create journal with media' 
+    };
+  }
+};
+
+// Get mood analytics for the current user
+export const getMoodAnalytics = async (timeFilter = 'week') => {
+  try {
+    const response = await api.get(`/journals/mood-analytics?timeFilter=${timeFilter}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Failed to fetch mood analytics' };
   }
 };
 
