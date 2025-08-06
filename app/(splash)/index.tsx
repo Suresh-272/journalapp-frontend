@@ -35,7 +35,11 @@ export default function SplashScreen() {
     <View style={styles.container}>
       <Animated.View style={{ opacity: logoOpacity, alignItems: 'center' }}>
         <Image
+<<<<<<< HEAD
+          source={require('../../assets/images/LOGO.jpg')}
+=======
           source={require('../../assets/images/logo-final.jpg')}
+>>>>>>> dedc86ac49afc9fd2441fccfa3697773a305152c
           style={styles.logo}
         />
       </Animated.View>

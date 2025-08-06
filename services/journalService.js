@@ -125,7 +125,7 @@ export const uploadMediaWithRetry = async (mediaFile, journalId, caption = '', m
 };
 
 // Create journal with media in a single request
-export const createJournalWithMedia = async (journalData, mediaFiles = []) => {
+export const createJournalWithMedia = async (journalData, mediaFiles = [], entryPassword = null) => {
   try {
     // Validate journal data
     if (!journalData.category || !['personal', 'professional'].includes(journalData.category)) {
@@ -216,5 +216,35 @@ export const getMoodAnalytics = async (timeFilter = 'week') => {
     return response.data;
   } catch (error) {
     throw error.response?.data || { error: 'Failed to fetch mood analytics' };
+  }
+};
+
+// Add a function to unlock a protected entry
+export const unlockProtectedEntry = async (entryId, password = null, useBiometrics = false) => {
+  try {
+    // If using biometrics, attempt biometric authentication
+    if (useBiometrics) {
+      // Use expo-local-authentication for biometric auth
+      const { LocalAuthentication } = require('expo-local-authentication');
+      
+      const biometricAuth = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Authenticate to unlock journal entry',
+        fallbackLabel: 'Use password instead',
+      });
+      
+      if (!biometricAuth.success) {
+        throw new Error('Biometric authentication failed');
+      }
+    }
+    
+    // Make API request to unlock entry
+    const response = await api.post(`/journals/${entryId}/unlock`, {
+      password,
+      useBiometrics
+    });
+    
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Failed to unlock journal entry' };
   }
 };
