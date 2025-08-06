@@ -219,6 +219,10 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
   const [category, setCategory] = useState('personal'); // Default to personal
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [isProtected, setIsProtected] = useState(false); // New state for protection
+  const [showProtectionModal, setShowProtectionModal] = useState(false); // Modal for password/biometrics
+  const [entryPassword, setEntryPassword] = useState(''); // Password for protected entry
+  const [usesBiometrics, setUsesBiometrics] = useState(false); // Whether to use biometrics
   const textInputRef = useRef(null);
   const contentInputRef = useRef(null);
 
@@ -319,6 +323,19 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
     );
   };
 
+  // Handle protection toggle
+  const handleProtectionToggle = () => {
+    if (!isProtected) {
+      // If turning on protection, show the protection modal
+      setShowProtectionModal(true);
+    } else {
+      // If turning off protection, just disable it
+      setIsProtected(false);
+      setEntryPassword('');
+      setUsesBiometrics(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!title.trim() && !content.trim() && photos.length === 0) {
       Alert.alert('Empty Entry', 'Please add some content to your journal entry.');
@@ -333,11 +350,21 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
         title: title.trim() || 'Untitled Entry',
         content: content.trim(),
         location: location || '',
-        category: category, // Include category in the data
-        mood: 'neutral'
+        category: category,
+        mood: 'neutral',
+        isProtected: isProtected, // Add protection status
+        protectionType: usesBiometrics ? 'biometric' : 'password', // Add protection type
+        // Don't include the actual password in the request payload for security
+        // It will be handled separately
       };
       
-      const response = await createJournalWithMedia(journalData, photos);
+      // If entry is protected with password, encrypt the content
+      let response;
+      if (isProtected && entryPassword && !usesBiometrics) {
+        response = await createJournalWithMedia(journalData, photos, entryPassword);
+      } else {
+        response = await createJournalWithMedia(journalData, photos);
+      }
       
       console.log('Journal created successfully:', response);
       
@@ -350,6 +377,9 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
           setLocation('');
           setCategory('personal');
           setActiveTab('text');
+          setIsProtected(false);
+          setEntryPassword('');
+          setUsesBiometrics(false);
           
           // Close the screen
           if (onClose) {
@@ -512,19 +542,41 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
             </TouchableOpacity>
           </View>
 
-          {/* Category Selection */}
-          <View style={styles.categoryContainer}>
-            <Text style={styles.categoryLabel}>Category</Text>
-            <TouchableOpacity 
-              style={styles.categorySelector}
-              onPress={() => setShowCategoryModal(true)}
-            >
-              <View style={styles.categoryDisplay}>
-                <Text style={styles.categoryIcon}>{categoryInfo.icon}</Text>
-                <Text style={styles.categoryText}>{categoryInfo.label}</Text>
-              </View>
-              <Text style={styles.categoryChevron}>›</Text>
-            </TouchableOpacity>
+          {/* Category and Protection Row */}
+          <View style={styles.optionsContainer}>
+            {/* Category Selection */}
+            <View style={styles.categoryContainer}>
+              <Text style={styles.categoryLabel}>Category</Text>
+              <TouchableOpacity 
+                style={styles.categorySelector}
+                onPress={() => setShowCategoryModal(true)}
+              >
+                <View style={styles.categoryDisplay}>
+                  <Text style={styles.categoryIcon}>{categoryInfo.icon}</Text>
+                  <Text style={styles.categoryText}>{categoryInfo.label}</Text>
+                </View>
+                <Text style={styles.categoryChevron}>›</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {/* Protection Toggle */}
+            <View style={styles.protectionContainer}>
+              <Text style={styles.protectionLabel}>Protect Entry</Text>
+              <TouchableOpacity 
+                style={[styles.protectionToggle, isProtected && styles.protectionToggleActive]}
+                onPress={handleProtectionToggle}
+              >
+                <View style={styles.protectionDisplay}>
+                  <Text style={styles.protectionIcon}>{isProtected ? '🔒' : '🔓'}</Text>
+                  <Text style={styles.protectionText}>{isProtected ? 'Protected' : 'Not Protected'}</Text>
+                </View>
+                {isProtected && (
+                  <Text style={styles.protectionType}>
+                    {usesBiometrics ? 'Biometric' : 'Password'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Text Input Area */}
@@ -654,6 +706,99 @@ const JournalEntryScreen = ({ navigation, onClose }) => {
           onSelect={setCategory}
           selectedCategory={category}
         />
+        
+        {/* Protection Modal */}
+        <Modal
+          visible={showProtectionModal}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setShowProtectionModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Protect This Entry</Text>
+                <TouchableOpacity 
+                  style={styles.modalCloseButton} 
+                  onPress={() => setShowProtectionModal(false)}
+                >
+                  <Text style={styles.modalCloseText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.protectionOptions}>
+                <Text style={styles.protectionModalText}>
+                  Add an extra layer of security to keep this entry private.
+                </Text>
+                
+                {/* Password Protection Option */}
+                <View style={styles.protectionOption}>
+                  <View style={styles.protectionOptionHeader}>
+                    <Text style={styles.protectionOptionTitle}>Password Protection</Text>
+                    <TouchableOpacity 
+                      style={[styles.protectionOptionToggle, !usesBiometrics && styles.protectionOptionToggleActive]}
+                      onPress={() => setUsesBiometrics(false)}
+                    >
+                      <View style={styles.toggleIndicator} />
+                    </TouchableOpacity>
+                  </View>
+                  
+                  {!usesBiometrics && (
+                    <View style={styles.passwordInputContainer}>
+                      <TextInput
+                        style={styles.passwordInput}
+                        placeholder="Create a strong password"
+                        placeholderTextColor="#9C7F5F"
+                        value={entryPassword}
+                        onChangeText={setEntryPassword}
+                        secureTextEntry
+                      />
+                      <Text style={styles.passwordHint}>
+                        Remember this password! If forgotten, you may not be able to access this entry again.
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                
+                {/* Biometric Protection Option */}
+                <View style={styles.protectionOption}>
+                  <View style={styles.protectionOptionHeader}>
+                    <Text style={styles.protectionOptionTitle}>Biometric Protection</Text>
+                    <TouchableOpacity 
+                      style={[styles.protectionOptionToggle, usesBiometrics && styles.protectionOptionToggleActive]}
+                      onPress={() => setUsesBiometrics(true)}
+                    >
+                      <View style={styles.toggleIndicator} />
+                    </TouchableOpacity>
+                  </View>
+                  
+                  {usesBiometrics && (
+                    <Text style={styles.biometricHint}>
+                      Use your device's fingerprint or face recognition to unlock this entry.
+                    </Text>
+                  )}
+                </View>
+              </View>
+              
+              <TouchableOpacity 
+                style={styles.protectionConfirmButton}
+                onPress={() => {
+                  // Validate password if using password protection
+                  if (!usesBiometrics && (!entryPassword || entryPassword.length < 4)) {
+                    Alert.alert('Weak Password', 'Please create a stronger password (at least 4 characters)');
+                    return;
+                  }
+                  
+                  // Enable protection and close modal
+                  setIsProtected(true);
+                  setShowProtectionModal(false);
+                }}
+              >
+                <Text style={styles.protectionConfirmText}>Protect Entry</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );
@@ -663,6 +808,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F2EE',
+  },
+  optionsContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
   },
   header: {
     flexDirection: 'row',
@@ -996,10 +1145,133 @@ const styles = StyleSheet.create({
   },
   // Category Selector in main screen
   categoryContainer: {
-    paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#E6D7C6',
+  },
+  protectionContainer: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E6D7C6',
+  },
+  protectionLabel: {
+    color: '#6B5B4C',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  protectionToggle: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#E6D7C6',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginTop: 8,
+    borderWidth: 2,
+    borderColor: '#E6D7C6',
+  },
+  protectionToggleActive: {
+    borderColor: '#C8A882',
+    backgroundColor: '#F0E6D2',
+  },
+  protectionDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  protectionIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  protectionText: {
+    color: '#6B5B4C',
+    fontSize: 16,
+  },
+  protectionType: {
+    color: '#8B6F47',
+    fontSize: 14,
+    fontWeight: '600',
+    backgroundColor: '#E6D7C6',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  protectionOptions: {
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  protectionModalText: {
+    color: '#4A4A4A',
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 20,
+  },
+  protectionOption: {
+    backgroundColor: '#E6D7C6',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  protectionOptionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  protectionOptionTitle: {
+    color: '#6B5B4C',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  protectionOptionToggle: {
+    width: 50,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#D4B896',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  protectionOptionToggleActive: {
+    backgroundColor: '#8B6F47',
+  },
+  toggleIndicator: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#F5F2EE',
+  },
+  passwordInputContainer: {
+    marginTop: 8,
+  },
+  passwordInput: {
+    backgroundColor: '#F5F2EE',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: '#4A4A4A',
+    fontSize: 16,
+  },
+  passwordHint: {
+    color: '#8B6F47',
+    fontSize: 14,
+    marginTop: 8,
+    fontStyle: 'italic',
+  },
+  biometricHint: {
+    color: '#4A4A4A',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  protectionConfirmButton: {
+    backgroundColor: '#8B6F47',
+    borderRadius: 20,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  protectionConfirmText: {
+    color: '#F5F2EE',
+    fontSize: 16,
+    fontWeight: '600',
   },
   categorySelector: {
     flexDirection: 'row',
