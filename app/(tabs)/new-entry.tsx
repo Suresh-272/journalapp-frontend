@@ -20,9 +20,10 @@ import {
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
-import { createJournalWithMedia } from '../../services/journalService';
+import { createJournalWithMedia, protectJournalEntry } from '../../services/journalService';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { PrivacyToggle } from '../../components/PrivacyToggle';
 
 // Custom color theme for the journal entry screen
 const journalTheme = {
@@ -270,8 +271,13 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
   const [category, setCategory] = useState('personal'); // Default to personal
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-  const textInputRef = useRef(null);
-  const contentInputRef = useRef(null);
+  const [isProtected, setIsProtected] = useState(false);
+  const [entryPassword, setEntryPassword] = useState('');
+  const textInputRef = useRef<TextInput>(null);
+  const contentInputRef = useRef<TextInput>(null);
+  
+  const colorScheme = useColorScheme();
+  const theme = journalTheme;
 
   // Handle keyboard visibility
   useEffect(() => {
@@ -296,6 +302,12 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
         Alert.alert('Permission required', 'Sorry, we need camera roll permissions to add photos!');
       }
     })();
+  }, []);
+
+  // Reset protection state for each new entry
+  useEffect(() => {
+    setIsProtected(false);
+    setEntryPassword('');
   }, []);
 
   // Handle hardware back button on Android
@@ -370,19 +382,6 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
     );
   };
 
-  // Handle protection toggle
-  const handleProtectionToggle = () => {
-    if (!isProtected) {
-      // If turning on protection, show the protection modal
-      setShowProtectionModal(true);
-    } else {
-      // If turning off protection, just disable it
-      setIsProtected(false);
-      setEntryPassword('');
-      setUsesBiometrics(false);
-    }
-  };
-
   const handleSave = async () => {
     if (!title.trim() && !content.trim() && photos.length === 0) {
       Alert.alert('Empty Entry', 'Please add some content to your journal entry.');
@@ -403,11 +402,16 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
         title: title.trim() || 'Untitled Entry',
         content: content.trim(),
         location: location || '',
-        category: category, // Include category in the data
-        mood: 'neutral'
+        category: category, // Ensure category is properly set
+        mood: 'neutral',
+        tags: []
       };
       
-      const response = await createJournalWithMedia(journalData, photos);
+      console.log('Saving journal with data:', journalData);
+      console.log('Category being saved:', category);
+      console.log('Protection status:', isProtected);
+      
+      const response = await createJournalWithMedia(journalData, photos, isProtected, entryPassword);
       
       console.log('Journal created successfully:', response);
       console.log('Saved category:', response.data?.category);
@@ -421,9 +425,6 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
           setLocation('');
           setCategory('personal');
           setActiveTab('text');
-          setIsProtected(false);
-          setEntryPassword('');
-          setUsesBiometrics(false);
           
           // Close the screen
           if (onClose) {
@@ -534,6 +535,21 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
     }
   };
 
+  // Privacy handling functions
+  const handleProtectEntry = async (password: string, useBiometrics: boolean) => {
+    setIsProtected(true);
+    setEntryPassword(password);
+  };
+
+  const handleUnprotectEntry = async (password: string) => {
+    if (password === entryPassword) {
+      setIsProtected(false);
+      setEntryPassword('');
+    } else {
+      throw new Error('Incorrect password');
+    }
+  };
+
   if (showCamera) {
     return (
       <CameraViewComponent 
@@ -579,27 +595,66 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ paddingBottom: isKeyboardVisible ? 100 : 20 }}
         >
-          {/* Journal Header */}
+          {/* Compact Journal Header with Category and Privacy */}
           <View style={[styles.journalHeader, { borderBottomColor: theme.pastelPink }]}>
-            <Text style={[styles.journalTitle, { color: theme.text }]}>Journal</Text>
-            <TouchableOpacity onPress={() => setLocation('Current Location')}>
-              <Text style={[styles.addLocationText, { color: theme.tint }]}>Add location?</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Category Selection */}
-          <View style={styles.categoryContainer}>
-            <Text style={styles.categoryLabel}>Category</Text>
-            <TouchableOpacity 
-              style={styles.categorySelector}
-              onPress={() => setShowCategoryModal(true)}
-            >
-              <View style={styles.categoryDisplay}>
+            <View style={styles.journalHeaderTop}>
+              <Text style={[styles.journalTitle, { color: theme.text }]}>Journal</Text>
+              <TouchableOpacity onPress={() => setLocation('Current Location')}>
+                <Text style={[styles.addLocationText, { color: theme.tint }]}>Add location?</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.journalHeaderBottom}>
+              {/* Category Selection */}
+              <TouchableOpacity 
+                style={[styles.compactCategorySelector, { backgroundColor: theme.pastelPink }]}
+                onPress={() => setShowCategoryModal(true)}
+              >
                 <Text style={styles.categoryIcon}>{categoryInfo.icon}</Text>
-                <Text style={styles.categoryText}>{categoryInfo.label}</Text>
+                <Text style={[styles.compactCategoryText, { color: theme.text }]}>{categoryInfo.label}</Text>
+                <Text style={[styles.categoryChevron, { color: theme.tint }]}>›</Text>
+              </TouchableOpacity>
+
+              {/* Privacy Toggle */}
+              <View style={styles.compactPrivacyToggle}>
+                <Text style={[styles.compactPrivacyLabel, { color: theme.text }]}>🔒</Text>
+                <TouchableOpacity 
+                  style={[
+                    styles.compactToggleButton, 
+                    { backgroundColor: isProtected ? theme.tint : theme.pastelPink }
+                  ]}
+                  onPress={() => {
+                    if (isProtected) {
+                      handleUnprotectEntry(entryPassword);
+                    } else {
+                      // Show password input modal for protection
+                      Alert.prompt(
+                        'Protect Entry',
+                        'Enter a password to protect this entry:',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          { 
+                            text: 'Protect', 
+                            onPress: (password) => {
+                              if (password && password.length >= 6) {
+                                handleProtectEntry(password, false);
+                              } else {
+                                Alert.alert('Error', 'Password must be at least 6 characters long');
+                              }
+                            }
+                          }
+                        ],
+                        'secure-text'
+                      );
+                    }
+                  }}
+                >
+                  <Text style={[styles.compactToggleText, { color: theme.text }]}>
+                    {isProtected ? 'Protected' : 'Public'}
+                  </Text>
+                </TouchableOpacity>
               </View>
-              <Text style={styles.categoryChevron}>›</Text>
-            </TouchableOpacity>
+            </View>
           </View>
 
           {/* Text Input Area */}
@@ -664,54 +719,34 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
           )}
         </ScrollView>
 
-        {/* Bottom Controls - Hidden when keyboard is visible */}
-        {!isKeyboardVisible && (
-          <View style={[styles.bottomControls, { backgroundColor: theme.pastelBlue }]}>
-            <View style={[styles.mediaControls, { backgroundColor: theme.pastelPink }]}>
-              <TouchableOpacity 
-                style={[styles.mediaButton, activeTab === 'photos' && { backgroundColor: theme.tint }]}
-                onPress={() => {
-                  setActiveTab('photos');
-                  setShowCamera(true);
-                }}
-              >
-                <Text style={styles.mediaButtonIcon}>📷</Text>
-                <Text style={[styles.mediaButtonText, { color: theme.text }]}>Camera</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.mediaButton, activeTab === 'gallery' && { backgroundColor: theme.tint }]}
-                onPress={() => {
-                  setActiveTab('gallery');
-                  handleImageLibrary();
-                }}
-              >
-                <Text style={styles.mediaButtonIcon}>🖼️</Text>
-                <Text style={[styles.mediaButtonText, { color: theme.text }]}>Gallery</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.mediaButton, activeTab === 'templates' && { backgroundColor: theme.tint }]}
-                onPress={() => setActiveTab('templates')}
-              >
-                <Text style={styles.mediaButtonIcon}>📝</Text>
-                <Text style={[styles.mediaButtonText, { color: theme.text }]}>Templates</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.mediaButton, activeTab === 'audio' && { backgroundColor: theme.tint }]}
-                onPress={() => setActiveTab('audio')}
-              >
-                <Text style={styles.mediaButtonIcon}>🎤</Text>
-                <Text style={[styles.mediaButtonText, { color: theme.text }]}>Audio</Text>
-              </TouchableOpacity>
+                  {/* Bottom Controls - Hidden when keyboard is visible */}
+          {!isKeyboardVisible && (
+            <View style={[styles.bottomControls, { backgroundColor: theme.pastelBlue }]}>
+              <View style={[styles.mediaControls, { backgroundColor: theme.pastelPink }]}>
+                <TouchableOpacity 
+                  style={[styles.mediaButton, activeTab === 'photos' && { backgroundColor: theme.tint }]}
+                  onPress={() => {
+                    setActiveTab('photos');
+                    setShowCamera(true);
+                  }}
+                >
+                  <Text style={styles.mediaButtonIcon}>📷</Text>
+                  <Text style={[styles.mediaButtonText, { color: theme.text }]}>Camera</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.mediaButton, activeTab === 'gallery' && { backgroundColor: theme.tint }]}
+                  onPress={() => {
+                    setActiveTab('gallery');
+                    handleImageLibrary();
+                  }}
+                >
+                  <Text style={styles.mediaButtonIcon}>🖼️</Text>
+                  <Text style={[styles.mediaButtonText, { color: theme.text }]}>Gallery</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            
-            <TouchableOpacity style={styles.moreButton}>
-              <Text style={[styles.moreButtonText, { color: theme.tint }]}>⌄ More</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+          )}
 
         {/* Keyboard Toolbar when keyboard is visible */}
         {isKeyboardVisible && (
@@ -729,99 +764,6 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
           onSelect={setCategory}
           selectedCategory={category}
         />
-        
-        {/* Protection Modal */}
-        <Modal
-          visible={showProtectionModal}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setShowProtectionModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Protect This Entry</Text>
-                <TouchableOpacity 
-                  style={styles.modalCloseButton} 
-                  onPress={() => setShowProtectionModal(false)}
-                >
-                  <Text style={styles.modalCloseText}>✕</Text>
-                </TouchableOpacity>
-              </View>
-              
-              <View style={styles.protectionOptions}>
-                <Text style={styles.protectionModalText}>
-                  Add an extra layer of security to keep this entry private.
-                </Text>
-                
-                {/* Password Protection Option */}
-                <View style={styles.protectionOption}>
-                  <View style={styles.protectionOptionHeader}>
-                    <Text style={styles.protectionOptionTitle}>Password Protection</Text>
-                    <TouchableOpacity 
-                      style={[styles.protectionOptionToggle, !usesBiometrics && styles.protectionOptionToggleActive]}
-                      onPress={() => setUsesBiometrics(false)}
-                    >
-                      <View style={styles.toggleIndicator} />
-                    </TouchableOpacity>
-                  </View>
-                  
-                  {!usesBiometrics && (
-                    <View style={styles.passwordInputContainer}>
-                      <TextInput
-                        style={styles.passwordInput}
-                        placeholder="Create a strong password"
-                        placeholderTextColor="#9C7F5F"
-                        value={entryPassword}
-                        onChangeText={setEntryPassword}
-                        secureTextEntry
-                      />
-                      <Text style={styles.passwordHint}>
-                        Remember this password! If forgotten, you may not be able to access this entry again.
-                      </Text>
-                    </View>
-                  )}
-                </View>
-                
-                {/* Biometric Protection Option */}
-                <View style={styles.protectionOption}>
-                  <View style={styles.protectionOptionHeader}>
-                    <Text style={styles.protectionOptionTitle}>Biometric Protection</Text>
-                    <TouchableOpacity 
-                      style={[styles.protectionOptionToggle, usesBiometrics && styles.protectionOptionToggleActive]}
-                      onPress={() => setUsesBiometrics(true)}
-                    >
-                      <View style={styles.toggleIndicator} />
-                    </TouchableOpacity>
-                  </View>
-                  
-                  {usesBiometrics && (
-                    <Text style={styles.biometricHint}>
-                      Use your device's fingerprint or face recognition to unlock this entry.
-                    </Text>
-                  )}
-                </View>
-              </View>
-              
-              <TouchableOpacity 
-                style={styles.protectionConfirmButton}
-                onPress={() => {
-                  // Validate password if using password protection
-                  if (!usesBiometrics && (!entryPassword || entryPassword.length < 4)) {
-                    Alert.alert('Weak Password', 'Please create a stronger password (at least 4 characters)');
-                    return;
-                  }
-                  
-                  // Enable protection and close modal
-                  setIsProtected(true);
-                  setShowProtectionModal(false);
-                }}
-              >
-                <Text style={styles.protectionConfirmText}>Protect Entry</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );
@@ -830,18 +772,15 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  optionsContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingBottom: 80,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
     paddingTop: 60,
-    paddingBottom: 16,
+    paddingBottom: 20,
   },
   dateTime: {
     fontSize: 16,
@@ -850,7 +789,7 @@ const styles = StyleSheet.create({
   headerControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 20,
   },
   keyboardDismissButton: {
     padding: 8,
@@ -868,9 +807,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   doneButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 22,
   },
   doneButtonText: {
     fontSize: 16,
@@ -880,12 +819,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   journalHeader: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    marginBottom: 8,
+  },
+  journalHeaderTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
+    marginBottom: 12,
+  },
+  journalHeaderBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
   },
   journalTitle: {
     fontSize: 20,
@@ -898,34 +847,72 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
     lineHeight: 22,
   },
+  compactCategorySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    flex: 1,
+    marginRight: 8,
+  },
+  compactCategoryText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    marginLeft: 8,
+    lineHeight: 18,
+  },
+  compactPrivacyToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  compactPrivacyLabel: {
+    fontSize: 16,
+  },
+  compactToggleButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    minWidth: 70,
+    alignItems: 'center',
+  },
+  compactToggleText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    fontWeight: '600',
+  },
   textInputContainer: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 20,
   },
   titleInput: {
-    fontSize: 26,
-    fontFamily: 'Caveat-Bold',
-    marginBottom: 20,
-    minHeight: 40,
-    lineHeight: 34,
+    fontSize: 28,
+    fontFamily: 'Inter-Bold',
+    marginBottom: 24,
+    minHeight: 48,
+    lineHeight: 36,
+    paddingVertical: 8,
   },
   contentInput: {
     fontSize: 18,
-    fontFamily: 'Caveat-Regular',
+    fontFamily: 'Inter-Regular',
     lineHeight: 28,
-    minHeight: 200,
+    minHeight: 240,
     textAlignVertical: 'top',
+    paddingVertical: 8,
   },
   photoGallery: {
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: 24,
+    marginBottom: 24,
+    paddingHorizontal: 20,
   },
   photoGalleryTitle: {
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
-    marginLeft: 16,
-    marginBottom: 12,
+    marginBottom: 16,
     lineHeight: 24,
   },
   photoItem: {
@@ -970,10 +957,10 @@ const styles = StyleSheet.create({
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginTop: 16,
-    padding: 12,
-    borderRadius: 8,
+    marginHorizontal: 20,
+    marginTop: 20,
+    padding: 16,
+    borderRadius: 12,
   },
   locationIcon: {
     fontSize: 16,
@@ -985,40 +972,40 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   bottomControls: {
-    paddingBottom: 34,
+    paddingBottom: 100,
   },
   mediaControls: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 25,
-    marginHorizontal: 16,
+    paddingHorizontal: 24,
+    borderRadius: 20,
+    marginHorizontal: 20,
     marginTop: 16,
+    gap: 12,
   },
   mediaButton: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 12,
-    paddingHorizontal: 8,
-    borderRadius: 15,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    minHeight: 60,
   },
   mediaButtonIcon: {
-    fontSize: 20,
-    marginBottom: 4,
+    fontSize: 22,
+    marginBottom: 6,
+    textAlign: 'center',
   },
   mediaButtonText: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 16,
   },
-  moreButton: {
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  moreButtonText: {
-    fontSize: 16,
-  },
+
   keyboardToolbar: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -1124,141 +1111,19 @@ const styles = StyleSheet.create({
   },
   // Category Selector in main screen
   categoryContainer: {
-    paddingVertical: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-  },
-  protectionContainer: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E6D7C6',
-  },
-  protectionLabel: {
-    color: '#6B5B4C',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  protectionToggle: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#E6D7C6',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginTop: 8,
-    borderWidth: 2,
-    borderColor: '#E6D7C6',
-  },
-  protectionToggleActive: {
-    borderColor: '#C8A882',
-    backgroundColor: '#F0E6D2',
-  },
-  protectionDisplay: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  protectionIcon: {
-    fontSize: 20,
-    marginRight: 12,
-  },
-  protectionText: {
-    color: '#6B5B4C',
-    fontSize: 16,
-  },
-  protectionType: {
-    color: '#8B6F47',
-    fontSize: 14,
-    fontWeight: '600',
-    backgroundColor: '#E6D7C6',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  protectionOptions: {
-    marginTop: 16,
-    marginBottom: 24,
-  },
-  protectionModalText: {
-    color: '#4A4A4A',
-    fontSize: 16,
-    lineHeight: 24,
-    marginBottom: 20,
-  },
-  protectionOption: {
-    backgroundColor: '#E6D7C6',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  protectionOptionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  protectionOptionTitle: {
-    color: '#6B5B4C',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  protectionOptionToggle: {
-    width: 50,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#D4B896',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-  },
-  protectionOptionToggleActive: {
-    backgroundColor: '#8B6F47',
-  },
-  toggleIndicator: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#F5F2EE',
-  },
-  passwordInputContainer: {
-    marginTop: 8,
-  },
-  passwordInput: {
-    backgroundColor: '#F5F2EE',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: '#4A4A4A',
-    fontSize: 16,
-  },
-  passwordHint: {
-    color: '#8B6F47',
-    fontSize: 14,
-    marginTop: 8,
-    fontStyle: 'italic',
-  },
-  biometricHint: {
-    color: '#4A4A4A',
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  protectionConfirmButton: {
-    backgroundColor: '#8B6F47',
-    borderRadius: 20,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  protectionConfirmText: {
-    color: '#F5F2EE',
-    fontSize: 16,
-    fontWeight: '600',
+    marginBottom: 8,
   },
   categorySelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginTop: 8,
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginTop: 12,
   },
   categoryDisplay: {
     flexDirection: 'row',
@@ -1273,6 +1138,19 @@ const styles = StyleSheet.create({
   categoryChevron: {
     fontSize: 20,
     fontWeight: '600',
+  },
+  // Privacy Styles
+  privacyContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    marginBottom: 8,
+  },
+  privacyLabel: {
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
+    marginBottom: 8,
+    lineHeight: 24,
   },
   // Camera Styles
   cameraContainer: {

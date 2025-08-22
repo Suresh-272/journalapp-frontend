@@ -43,6 +43,7 @@ export default function RootLayout() {
         <Stack.Screen name="(splash)" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="journal" />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

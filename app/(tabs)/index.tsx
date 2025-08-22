@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, FlatList, TouchableOpacity, View, Animated, Alert, RefreshControl, ScrollView, Text } from 'react-native';
 
 import { GlassCard } from '@/components/GlassCard';
@@ -42,6 +42,7 @@ interface JournalEntry {
   tags: string[];
   location?: string;
   category: string;
+  isProtected?: boolean;
   media: Array<{
     _id: string;
     type: 'image' | 'audio' | 'video';
@@ -61,23 +62,14 @@ interface JournalResponse {
   data: JournalEntry[];
 }
 
-// Mood emoji mapping
-const moodEmojis: Record<string, string> = {
-  happy: '😊',
-  sad: '😢',
-  angry: '😠',
-  thoughtful: '🤔',
-  excited: '🎉',
-  calm: '😌',
-  neutral: '😐',
-};
+
 
 export default function EntriesScreen() {
   const colorScheme = useColorScheme();
   const router = useRouter();
   const [showFAB, setShowFAB] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-  const fabOpacity = new Animated.Value(1);
+  const fabOpacity = useRef(new Animated.Value(1)).current;
   
   // State for journal data
   const [journals, setJournals] = useState<JournalEntry[]>([]);
@@ -171,34 +163,12 @@ export default function EntriesScreen() {
     setLastScrollY(currentScrollY);
   };
 
-<<<<<<< HEAD
-  // In the renderJournalEntry function, update the return statement to include a lock icon for protected entries
-  
-  const renderJournalEntry = ({ item }) => {
-    const formattedDate = new Date(item.date).toLocaleDateString('en-US', {
-=======
   const renderJournalEntry = ({ item }: { item: JournalEntry }) => {
     const formattedDate = new Date(item.createdAt).toLocaleDateString('en-US', {
->>>>>>> dedc86ac49afc9fd2441fccfa3697773a305152c
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     });
-<<<<<<< HEAD
-  
-    return (
-      <TouchableOpacity 
-        style={styles.entryContainer}
-        onPress={() => {
-          // If entry is protected, show unlock screen first
-          if (item.isProtected) {
-            handleProtectedEntryAccess(item);
-          } else {
-            // Otherwise, navigate directly to the entry
-            router.push(`/entry/${item.id}`);
-          }
-        }}
-=======
 
     // Check for media types
     const hasPhoto = item.media.some(m => m.type === 'image');
@@ -208,33 +178,23 @@ export default function EntriesScreen() {
     return (
       <TouchableOpacity 
         style={styles.entryContainer}
-        onPress={() => router.push(`/journal-detail?id=${item._id}` as any)}
->>>>>>> dedc86ac49afc9fd2441fccfa3697773a305152c
+                        onPress={() => router.push(`/journal/detail?id=${item._id}` as any)}
         activeOpacity={0.8}
       >
         <GlassCard style={[styles.entryCard, { backgroundColor: theme.cardBackground }] as any}>
           <View style={styles.entryHeader}>
             <View style={styles.titleContainer}>
-<<<<<<< HEAD
-              {item.isProtected && (
-                <Text style={styles.lockIcon}>🔒</Text>
-              )}
-              <ThemedText type="journalTitle" style={styles.titleText}>
-                {item.title}
-              </ThemedText>
-            </View>
-            <ThemedText style={styles.dateText}>{formattedDate}</ThemedText>
-          </View>
-          
-          <ThemedText numberOfLines={2} style={styles.previewText}>
-            {item.isProtected ? "This entry is protected. Tap to unlock." : item.preview}
-=======
-              <ThemedText type="journalTitle" style={[styles.titleText, { color: theme.text }]}>
-                {item.title}
-              </ThemedText>
+              <View style={styles.titleRow}>
+                <ThemedText type="journalTitle" style={[styles.titleText, { color: theme.text }]}>
+                  {item.title}
+                </ThemedText>
+                {item.isProtected && (
+                  <Text style={styles.lockIcon}>Locked</Text>
+                )}
+              </View>
               <View style={[styles.categoryBadge, { backgroundColor: theme.pastelPink }]}>
                 <ThemedText style={[styles.categoryBadgeText, { color: theme.mediumBrown }]}>
-                  {item.category === 'personal' ? '👤' : '💼'} {item.category}
+                  {item.category}
                 </ThemedText>
               </View>
             </View>
@@ -243,13 +203,12 @@ export default function EntriesScreen() {
           
           <ThemedText numberOfLines={2} style={[styles.previewText, { color: theme.text }]}>
             {item.content}
->>>>>>> dedc86ac49afc9fd2441fccfa3697773a305152c
           </ThemedText>
           
-          <View style={styles.entryFooter}>
+          {/* <View style={styles.entryFooter}>
             <View style={[styles.moodContainer, { backgroundColor: theme.pastelPink }]}>
-              <ThemedText style={styles.moodEmoji}>
-                {moodEmojis[item.mood] || '😐'}
+              <ThemedText style={styles.moodText}>
+                {item.mood || 'neutral'}
               </ThemedText>
             </View>
             
@@ -264,194 +223,30 @@ export default function EntriesScreen() {
                 <IconSymbol name="video" size={18} color={theme.tabIconDefault} />
               )}
             </View>
-          </View>
+          </View> */}
         </GlassCard>
       </TouchableOpacity>
     );
   };
 
-  // Add a function to handle protected entry access
-  const handleProtectedEntryAccess = (entry) => {
-    // Determine protection type
-    if (entry.protectionType === 'biometric') {
-      // Use biometric authentication
-      handleBiometricAuth(entry);
-    } else {
-      // Show password prompt
-      showPasswordPrompt(entry);
-    }
+  const handleAddEntry = () => {
+    router.push('/new-entry');
   };
 
-  // Add these functions to handle authentication
-  const handleBiometricAuth = async (entry) => {
-    try {
-      const result = await unlockProtectedEntry(entry.id, null, true);
-      if (result.success) {
-        router.push(`/entry/${entry.id}`);
-      }
-    } catch (error) {
-      console.error('Biometric auth error:', error);
-      Alert.alert('Authentication Failed', 'Unable to authenticate using biometrics. Would you like to try password instead?', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Use Password', onPress: () => showPasswordPrompt(entry) }
-      ]);
-    }
+  const handleInspireMe = () => {
+    // Show a random journal prompt
+    const prompts = [
+      "What secret dream do you carry but rarely speak about?",
+      "Describe a moment today that made you feel alive.",
+      "What's something you're grateful for right now?",
+      "If you could change one thing about your day, what would it be?",
+      "What's a small joy you experienced recently?"
+    ];
+    
+    const randomPrompt = prompts[Math.floor(Math.random() * prompts.length)];
+    // Show prompt in a modal or navigate to new entry with this prompt
   };
 
-<<<<<<< HEAD
-  const showPasswordPrompt = (entry) => {
-    // Show a modal or alert with password input
-    Alert.prompt(
-      'Protected Entry',
-      'Enter password to unlock this entry',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Unlock', 
-          onPress: async (password) => {
-            if (!password) return;
-            
-            try {
-              const result = await unlockProtectedEntry(entry.id, password, false);
-              if (result.success) {
-                router.push(`/entry/${entry.id}`);
-              }
-            } catch (error) {
-              console.error('Password unlock error:', error);
-              Alert.alert('Authentication Failed', 'Incorrect password. Please try again.');
-            }
-          } 
-        }
-      ],
-      'secure-text'
-    );
-  };
-
-  // Add these styles
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      paddingTop: 60,
-      backgroundColor: WarmColors.background,
-    },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      marginBottom: 20,
-    },
-    headerTitle: {
-      color: WarmColors.textPrimary,
-      fontWeight: '700',
-      fontSize: 28,
-    },
-    inspireButton: {
-      backgroundColor: WarmColors.primary,
-      paddingHorizontal: 18,
-      paddingVertical: 10,
-      borderRadius: 25,
-      shadowColor: WarmColors.shadow,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.15,
-      shadowRadius: 3,
-      elevation: 3,
-    },
-    inspireButtonText: {
-      color: WarmColors.buttonText,
-      fontWeight: '600',
-      fontSize: 14,
-    },
-    listContainer: {
-      padding: 16,
-    },
-    entryContainer: {
-      marginBottom: 16,
-    },
-    entryCard: {
-      borderRadius: 16,
-      backgroundColor: WarmColors.cardBackground,
-      shadowColor: WarmColors.shadow,
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.1,
-      shadowRadius: 5,
-      elevation: 4,
-      borderWidth: 1,
-      borderColor: 'rgba(184, 149, 106, 0.1)',
-    },
-    entryHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 8,
-    },
-    titleText: {
-      color: WarmColors.textPrimary,
-      fontWeight: '600',
-      fontSize: 18,
-    },
-    dateText: {
-      fontSize: 14,
-      color: WarmColors.textMuted,
-      fontWeight: '500',
-    },
-    previewText: {
-      marginBottom: 12,
-      color: WarmColors.textSecondary,
-      fontSize: 15,
-      lineHeight: 20,
-    },
-    entryFooter: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    moodContainer: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: WarmColors.moodBackground,
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: 'rgba(184, 149, 106, 0.2)',
-    },
-    moodEmoji: {
-      fontSize: 20,
-    },
-    mediaIcons: {
-      flexDirection: 'row',
-      gap: 10,
-    },
-    fabContainer: {
-      position: 'absolute',
-      right: 20,
-      bottom: 20,
-    },
-    fab: {
-      width: 56,
-      height: 56,
-      borderRadius: 28,
-      backgroundColor: WarmColors.primary,
-      justifyContent: 'center',
-      alignItems: 'center',
-      shadowColor: WarmColors.shadow,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.25,
-      shadowRadius: 6,
-      elevation: 8,
-    },
-    titleContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    lockIcon: {
-      fontSize: 16,
-      marginRight: 8,
-    },
-  });
-}
-=======
   if (loading && journals.length === 0) {
     return (
       <ThemedView style={[styles.container, { backgroundColor: theme.background }]}>
@@ -467,10 +262,10 @@ export default function EntriesScreen() {
       <View style={styles.header}>
         <ThemedText type="title" style={[styles.headerTitle, { color: theme.text }]}>My Journal</ThemedText>
         <TouchableOpacity 
-          style={[styles.inspireButton, { backgroundColor: theme.tint }]}
-          onPress={handleInspireMe}
+          style={[styles.profileButton, { backgroundColor: theme.pastelPink }]}
+          onPress={() => router.push('/profile')}
         >
-          <ThemedText style={[styles.inspireButtonText, { color: theme.text }]}>Inspire Me</ThemedText>
+          <IconSymbol name="person.circle" size={24} color={theme.text} />
         </TouchableOpacity>
       </View>
 
@@ -566,15 +361,22 @@ export default function EntriesScreen() {
         }
       />
       
-      <Animated.View style={[styles.fabContainer, { opacity: fabOpacity }]}>
+      <View style={styles.fabContainer}>
         <TouchableOpacity 
-          style={[styles.fab, { backgroundColor: theme.tint }]}
+          style={[
+            styles.fab, 
+            { 
+              backgroundColor: theme.warmAccent,
+              shadowColor: theme.darkBrown,
+            }
+          ]}
           onPress={handleAddEntry}
-          activeOpacity={0.8}
+          activeOpacity={0.7}
         >
-          <IconSymbol name="plus" size={24} color={theme.text} />
+          <IconSymbol name="plus" size={30} color={theme.cardBackground} />
         </TouchableOpacity>
-      </Animated.View>
+      </View>
+
     </ThemedView>
   );
 }
@@ -583,6 +385,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 60,
+    paddingBottom: 80,
+    position: 'relative',
   },
   header: {
     flexDirection: 'row',
@@ -609,6 +413,17 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     fontSize: 15,
     lineHeight: 20,
+  },
+  profileButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
   },
   loadingContainer: {
     flex: 1,
@@ -660,89 +475,137 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   entryCard: {
-    borderRadius: 16,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: 'rgba(139, 111, 71, 0.08)',
+    borderRadius: 20,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 5,
+    borderWidth: 1.5,
+    borderColor: 'rgba(139, 111, 71, 0.12)',
+    backgroundColor: '#FFFFFF',
   },
   entryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   titleContainer: {
     flex: 1,
     marginRight: 12,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
   titleText: {
-    fontFamily: 'Caveat-Bold',
-    fontSize: 20,
-    marginBottom: 4,
-    lineHeight: 26,
+    fontFamily: 'Inter-Bold',
+    fontSize: 22,
+    lineHeight: 28,
+    flex: 1,
+    color: '#3D2F22',
+  },
+  lockIcon: {
+    fontSize: 10,
+    fontFamily: 'Inter-SemiBold',
+    marginLeft: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(139, 111, 71, 0.15)',
+    color: '#6B5643',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   categoryBadge: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(139, 111, 71, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
   },
   categoryBadgeText: {
-    fontSize: 13,
-    fontFamily: 'Inter-Medium',
-    textTransform: 'capitalize',
-    lineHeight: 18,
+    fontSize: 11,
+    fontFamily: 'Inter-Bold',
+    textTransform: 'uppercase',
+    lineHeight: 14,
+    letterSpacing: 0.3,
   },
   dateText: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 13,
+    fontFamily: 'Inter-Medium',
+    color: '#8B7355',
+    textAlign: 'right',
   },
   previewText: {
-    marginBottom: 12,
+    marginBottom: 16,
     fontSize: 16,
-    fontFamily: 'Caveat-Regular',
+    fontFamily: 'Inter-Regular',
     lineHeight: 24,
+    color: '#5D4E37',
     opacity: 0.85,
   },
   entryFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(139, 111, 71, 0.08)',
   },
   moodContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(139, 111, 71, 0.15)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(139, 111, 71, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    minWidth: 70,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
-  moodEmoji: {
-    fontSize: 20,
+  moodText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    textTransform: 'uppercase',
+    lineHeight: 16,
+    letterSpacing: 0.4,
   },
   mediaIcons: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12,
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(139, 111, 71, 0.05)',
   },
   fabContainer: {
     position: 'absolute',
     right: 20,
-    bottom: 20,
+    bottom: 100, // Increased bottom margin to avoid tab bar
+    zIndex: 1000, // Ensure it's above other elements
   },
   fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 8,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   categoryFilterContainer: {
     paddingHorizontal: 20,
@@ -770,4 +633,3 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
->>>>>>> dedc86ac49afc9fd2441fccfa3697773a305152c

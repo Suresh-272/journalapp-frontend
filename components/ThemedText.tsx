@@ -26,6 +26,8 @@ export function ThemedText({
         type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
         type === 'subtitle' ? styles.subtitle : undefined,
         type === 'link' ? styles.link : undefined,
+        type === 'journalTitle' ? styles.journalTitle : undefined,
+        type === 'journalBody' ? styles.journalBody : undefined,
         style,
       ]}
       {...rest}
@@ -64,11 +66,11 @@ const styles = StyleSheet.create({
   journalTitle: {
     fontSize: 24,
     lineHeight: 32,
-    fontFamily: 'Caveat-Bold', // Handwriting only for journal entry titles
+    fontFamily: 'Inter-Bold', // Standard font for journal entry titles
   },
   journalBody: {
     fontSize: 18,
     lineHeight: 28,
-    fontFamily: 'Caveat-Regular', // Handwriting only for journal content
+    fontFamily: 'Inter-Regular', // Standard font for journal content
   },
 });

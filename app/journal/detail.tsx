@@ -21,7 +21,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { getJournal, updateJournal, deleteJournal } from '@/services/journalService';
+import { getJournal, updateJournal, deleteJournal, unlockProtectedEntry, protectJournalEntry, unprotectJournalEntry } from '@/services/journalService';
+import { PrivacyToggle } from '../../components/PrivacyToggle';
+import { UnlockModal } from '../../components/UnlockModal';
 
 const { width, height } = Dimensions.get('window');
 
@@ -63,6 +65,7 @@ interface JournalEntry {
   tags: string[];
   location?: string;
   category: string;
+  isProtected?: boolean;
   media: Array<{
     _id: string;
     type: 'image' | 'audio' | 'video';
@@ -71,6 +74,52 @@ interface JournalEntry {
   createdAt: string;
   updatedAt: string;
 }
+
+// Image Viewer Modal Component
+const ImageViewerModal = ({ visible, imageUri, onClose }: {
+  visible: boolean;
+  imageUri: string;
+  onClose: () => void;
+}) => {
+  const theme = journalTheme;
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="fade"
+      transparent={true}
+      onRequestClose={onClose}
+    >
+      <View style={styles.imageViewerOverlay}>
+        <StatusBar barStyle="light-content" backgroundColor="#000000" />
+        
+        {/* Close button positioned above everything */}
+        <TouchableOpacity 
+          style={styles.imageViewerCloseButton} 
+          onPress={onClose}
+          activeOpacity={0.7}
+        >
+          <View style={styles.imageViewerCloseButtonInner}>
+            <Text style={styles.imageViewerCloseText}>✕</Text>
+          </View>
+        </TouchableOpacity>
+        
+        {/* Image with touch to close functionality */}
+        <TouchableOpacity 
+          style={styles.fullScreenImageContainer} 
+          onPress={onClose}
+          activeOpacity={1}
+        >
+          <Image 
+            source={{ uri: imageUri }} 
+            style={styles.fullScreenImage}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
+      </View>
+    </Modal>
+  );
+};
 
 // Category Selection Modal Component
 const CategoryModal = ({ visible, onClose, onSelect, selectedCategory }: {
@@ -121,7 +170,7 @@ const CategoryModal = ({ visible, onClose, onSelect, selectedCategory }: {
                   <View style={styles.categoryTitleContainer}>
                     <Text style={styles.categoryIcon}>{category.icon}</Text>
                     <Text style={[
-                      styles.categoryLabel,
+                      styles.modalCategoryLabel,
                       { color: theme.text },
                       selectedCategory === category.key && { color: theme.text, fontWeight: '700' }
                     ]}>
@@ -161,6 +210,12 @@ export default function JournalDetailScreen() {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [photos, setPhotos] = useState<Photo[]>([]);
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [selectedImageUri, setSelectedImageUri] = useState('');
+  const [isProtected, setIsProtected] = useState(false);
+  const [entryPassword, setEntryPassword] = useState('');
   
   const textInputRef = useRef<TextInput>(null);
   const contentInputRef = useRef<TextInput>(null);
@@ -190,19 +245,49 @@ export default function JournalDetailScreen() {
     }
   }, [journalId]);
 
+  // Check if entry is protected and show unlock modal
+  useEffect(() => {
+    if (journal && journal.isProtected && !isUnlocked) {
+      console.log('Protected journal detected, showing unlock modal');
+      setShowUnlockModal(true);
+    } else if (journal && !journal.isProtected) {
+      console.log('Non-protected journal, unlocking automatically');
+      setIsUnlocked(true);
+    }
+  }, [journal, isUnlocked]);
+
+  // Reset protection state for each new entry
+  useEffect(() => {
+    if (journal) {
+      setIsProtected(journal.isProtected || false);
+    }
+  }, [journal]);
+
   const fetchJournal = async () => {
     try {
       const response = await getJournal(journalId);
       
       if (response.success) {
-        setJournal(response.data);
-        setTitle(response.data.title);
-        setContent(response.data.content);
-        setCategory(response.data.category || 'personal');
-        setLocation(response.data.location || '');
+        const journalData = response.data;
+        console.log('Fetched journal data:', {
+          id: journalData._id,
+          title: journalData.title,
+          isProtected: journalData.isProtected,
+          content: journalData.content?.substring(0, 50) + '...'
+        });
+        
+        setJournal(journalData);
+        setTitle(journalData.title);
+        setContent(journalData.content);
+        setCategory(journalData.category || 'personal');
+        setLocation(journalData.location || '');
+        setIsProtected(journalData.isProtected || false);
+        
+        // Reset unlock state for new journal
+        setIsUnlocked(false);
         
         // Convert media to photos format
-        const journalPhotos: Photo[] = response.data.media
+        const journalPhotos: Photo[] = journalData.media
           .filter((m: any) => m.type === 'image')
           .map((m: any) => ({
             uri: m.url,
@@ -232,6 +317,70 @@ export default function JournalDetailScreen() {
     Keyboard.dismiss();
     textInputRef.current?.blur();
     contentInputRef.current?.blur();
+  };
+
+  // Handle image click to view larger
+  const handleImageClick = (imageUri: string) => {
+    setSelectedImageUri(imageUri);
+    setShowImageViewer(true);
+  };
+
+  // Privacy handling functions
+  const handleUnlock = async (password: string, useBiometrics: boolean) => {
+    try {
+      if (!journalId) return;
+      console.log('Attempting to unlock journal:', journalId, 'with password:', password ? '***' : 'biometrics');
+      
+      const response = await unlockProtectedEntry(journalId, password || undefined, useBiometrics);
+      if (response.success) {
+        const unlockedJournal = response.data;
+        console.log('Successfully unlocked journal:', {
+          id: unlockedJournal._id,
+          title: unlockedJournal.title,
+          contentLength: unlockedJournal.content?.length
+        });
+        
+        setJournal(unlockedJournal);
+        setContent(unlockedJournal.content);
+        setTitle(unlockedJournal.title);
+        setCategory(unlockedJournal.category || 'personal');
+        setLocation(unlockedJournal.location || '');
+        setIsUnlocked(true);
+        setShowUnlockModal(false);
+      }
+    } catch (error: any) {
+      console.error('Unlock error:', error);
+      throw error;
+    }
+  };
+
+  const handleProtectEntry = async (password: string, useBiometrics: boolean) => {
+    try {
+      if (!journalId) return;
+      await protectJournalEntry(journalId, password);
+      setIsProtected(true);
+      setEntryPassword(password);
+      if (journal) {
+        setJournal({ ...journal, isProtected: true });
+      }
+    } catch (error: any) {
+      throw error;
+    }
+  };
+
+  const handleUnprotectEntry = async (password: string) => {
+    try {
+      if (!journalId) return;
+      const response = await unprotectJournalEntry(journalId, password);
+      if (response.success) {
+        setIsProtected(false);
+        setEntryPassword('');
+        setJournal(response.data);
+        setContent(response.data.content);
+      }
+    } catch (error: any) {
+      throw error;
+    }
   };
 
   const handleSave = async () => {
@@ -483,49 +632,121 @@ export default function JournalDetailScreen() {
             )}
           </View>
 
-          {/* Text Input Area */}
-          <View style={styles.textInputContainer}>
-            <TextInput
-              ref={textInputRef}
-              style={[styles.titleInput, { color: theme.text }]}
-              placeholder="Title"
-              placeholderTextColor={theme.tabIconDefault}
-              value={title}
-              onChangeText={setTitle}
-              multiline
-              editable={isEditing}
-            />
-            
-            <TextInput
-              ref={contentInputRef}
-              style={[styles.contentInput, { color: theme.text }]}
-              placeholder="What's on your mind?"
-              placeholderTextColor={theme.tabIconDefault}
-              value={content}
-              onChangeText={setContent}
-              multiline
-              textAlignVertical="top"
-              editable={isEditing}
-            />
-          </View>
+          {/* Privacy Toggle - Only show when editing */}
+          {isEditing && (
+            <View style={[styles.privacyContainer, { borderBottomColor: theme.pastelPink }]}>
+              <Text style={[styles.privacyLabel, { color: theme.text }]}>Privacy</Text>
+              <View style={styles.compactPrivacyToggle}>
+                <Text style={[styles.compactPrivacyLabel, { color: theme.text }]}>🔒</Text>
+                <TouchableOpacity 
+                  style={[
+                    styles.compactToggleButton, 
+                    { backgroundColor: isProtected ? theme.tint : theme.pastelPink }
+                  ]}
+                  onPress={() => {
+                    if (isProtected) {
+                      Alert.prompt(
+                        'Unprotect Entry',
+                        'Enter the password to unprotect this entry:',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          { 
+                            text: 'Unprotect', 
+                            onPress: (password) => {
+                              if (password === entryPassword) {
+                                handleUnprotectEntry(password);
+                              } else {
+                                Alert.alert('Error', 'Incorrect password');
+                              }
+                            }
+                          }
+                        ],
+                        'secure-text'
+                      );
+                    } else {
+                      // Show password input modal for protection
+                      Alert.prompt(
+                        'Protect Entry',
+                        'Enter a password to protect this entry:',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          { 
+                            text: 'Protect', 
+                            onPress: (password) => {
+                              if (password && password.length >= 6) {
+                                handleProtectEntry(password, false);
+                              } else {
+                                Alert.alert('Error', 'Password must be at least 6 characters long');
+                              }
+                            }
+                          }
+                        ],
+                        'secure-text'
+                      );
+                    }
+                  }}
+                >
+                  <Text style={[styles.compactToggleText, { color: theme.text }]}>
+                    {isProtected ? 'Protected' : 'Public'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
-          {/* Photo Gallery */}
-          {photos.length > 0 && (
+          {/* Text Input Area - Only show if not protected or if unlocked */}
+          {(!journal.isProtected || isUnlocked) ? (
+            <View style={styles.textInputContainer}>
+              <TextInput
+                ref={textInputRef}
+                style={[styles.titleInput, { color: theme.text }]}
+                placeholder="Title"
+                placeholderTextColor={theme.tabIconDefault}
+                value={title}
+                onChangeText={setTitle}
+                multiline
+                editable={isEditing}
+              />
+              
+              <TextInput
+                ref={contentInputRef}
+                style={[styles.contentInput, { color: theme.text }]}
+                placeholder="What's on your mind?"
+                placeholderTextColor={theme.tabIconDefault}
+                value={content}
+                onChangeText={setContent}
+                multiline
+                textAlignVertical="top"
+                editable={isEditing}
+              />
+            </View>
+          ) : (
+            <View style={styles.protectedContentPlaceholder}>
+              <Text style={[styles.protectedPlaceholderText, { color: theme.tabIconDefault }]}>
+                🔒 This entry is protected. Enter the password to view content.
+              </Text>
+            </View>
+          )}
+
+          {/* Photo Gallery - Only show if not protected or if unlocked */}
+          {photos.length > 0 && (!journal.isProtected || isUnlocked) && (
             <View style={styles.photoGallery}>
               <Text style={[styles.photoGalleryTitle, { color: theme.text }]}>Photos ({photos.length})</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {photos.map((photo, index) => (
-                  <View key={index} style={styles.photoItem}>
-                    <Image source={{ uri: photo.uri }} style={styles.photoImage} />
-                    {isEditing && (
-                      <TouchableOpacity 
-                        style={[styles.removePhotoButton, { backgroundColor: theme.tint }]}
-                        onPress={() => handleRemovePhoto(index)}
-                      >
-                        <Text style={[styles.removePhotoText, { color: theme.text }]}>×</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
+                  <TouchableOpacity key={index} onPress={() => handleImageClick(photo.uri)}>
+                    <View style={styles.photoItem}>
+                      <Image source={{ uri: photo.uri }} style={styles.photoImage} />
+                      {isEditing && (
+                        <TouchableOpacity 
+                          style={[styles.removePhotoButton, { backgroundColor: theme.tint }]}
+                          onPress={() => handleRemovePhoto(index)}
+                        >
+                          <Text style={[styles.removePhotoText, { color: theme.text }]}>×</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </TouchableOpacity>
                 ))}
                 {isEditing && (
                   <TouchableOpacity style={[styles.addPhotoButton, { backgroundColor: theme.background, borderColor: theme.tint }]} onPress={handleImageLibrary}>
@@ -536,8 +757,8 @@ export default function JournalDetailScreen() {
             </View>
           )}
 
-          {/* Location Display */}
-          {location && (
+          {/* Location Display - Only show if not protected or if unlocked */}
+          {location && (!journal.isProtected || isUnlocked) && (
             <View style={[styles.locationContainer, { backgroundColor: theme.pastelPink }]}>
               <Text style={styles.locationIcon}>📍</Text>
               <Text style={[styles.locationText, { color: theme.text }]}>{location}</Text>
@@ -561,6 +782,24 @@ export default function JournalDetailScreen() {
           onClose={() => setShowCategoryModal(false)}
           onSelect={setCategory}
           selectedCategory={category}
+        />
+
+        {/* Unlock Modal for Protected Entries */}
+        <UnlockModal
+          visible={showUnlockModal}
+          onUnlock={handleUnlock}
+          onCancel={() => {
+            setShowUnlockModal(false);
+            router.back();
+          }}
+          entryTitle={journal?.title || 'Protected Entry'}
+        />
+
+        {/* Image Viewer Modal */}
+        <ImageViewerModal
+          visible={showImageViewer}
+          imageUri={selectedImageUri}
+          onClose={() => setShowImageViewer(false)}
         />
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
@@ -689,6 +928,37 @@ const styles = StyleSheet.create({
   categoryIcon: {
     fontSize: 20,
   },
+  privacyContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  privacyLabel: {
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
+    marginBottom: 8,
+    lineHeight: 24,
+  },
+  compactPrivacyToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  compactPrivacyLabel: {
+    fontSize: 16,
+  },
+  compactToggleButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    minWidth: 70,
+    alignItems: 'center',
+  },
+  compactToggleText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    fontWeight: '600',
+  },
   textInputContainer: {
     flex: 1,
     paddingHorizontal: 16,
@@ -707,6 +977,18 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     minHeight: 200,
     textAlignVertical: 'top',
+  },
+  protectedContentPlaceholder: {
+    paddingHorizontal: 16,
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  protectedPlaceholderText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    textAlign: 'center',
+    lineHeight: 24,
   },
   photoGallery: {
     marginTop: 20,
@@ -845,7 +1127,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  categoryLabel: {
+  modalCategoryLabel: {
     fontSize: 16,
     fontWeight: '600',
   },
@@ -865,5 +1147,47 @@ const styles = StyleSheet.create({
   modalConfirmText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  // Image Viewer Modal Styles
+  imageViewerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageViewerCloseButton: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  imageViewerCloseButtonInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageViewerCloseText: {
+    fontSize: 24,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  fullScreenImageContainer: {
+    flex: 1,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '100%',
   },
 }); 

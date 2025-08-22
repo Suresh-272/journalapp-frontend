@@ -252,7 +252,7 @@ export default function CalendarScreen() {
 
   // Handle entry press - navigate to journal detail
   const handleEntryPress = (entry: JournalEntry) => {
-    router.push(`/journal-detail?id=${entry._id}` as any);
+    router.push(`/journal/detail?id=${entry._id}` as any);
   };
 
   // Calendar theme
@@ -468,6 +468,7 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingBottom: 80,
   },
   loadingContainer: {
     flex: 1,
@@ -542,7 +543,7 @@ const styles = StyleSheet.create({
   entryTitle: {
     flex: 1,
     fontSize: 18,
-    fontFamily: 'Caveat-Bold',
+    fontFamily: 'Inter-Bold',
     lineHeight: 24,
   },
   entryTime: {

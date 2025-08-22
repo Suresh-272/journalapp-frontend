@@ -125,7 +125,7 @@ export const uploadMediaWithRetry = async (mediaFile, journalId, caption = '', m
 };
 
 // Create journal with media in a single request
-export const createJournalWithMedia = async (journalData, mediaFiles = [], entryPassword = null) => {
+export const createJournalWithMedia = async (journalData, mediaFiles = [], isProtected = false, entryPassword = null) => {
   try {
     // Validate journal data
     if (!journalData.category || !['personal', 'professional'].includes(journalData.category)) {
@@ -142,6 +142,12 @@ export const createJournalWithMedia = async (journalData, mediaFiles = [], entry
     formData.append('mood', journalData.mood || 'neutral');
     formData.append('location', journalData.location || '');
     formData.append('tags', JSON.stringify(journalData.tags || []));
+    
+    // Add protection data if enabled
+    if (isProtected && entryPassword) {
+      formData.append('isProtected', 'true');
+      formData.append('password', entryPassword);
+    }
     
     // Add media files with optimization
     for (let i = 0; i < mediaFiles.length; i++) {
@@ -219,7 +225,19 @@ export const getMoodAnalytics = async (timeFilter = 'week') => {
   }
 };
 
-// Add a function to unlock a protected entry
+// Protect a journal entry with password
+export const protectJournalEntry = async (entryId, password) => {
+  try {
+    const response = await api.post(`/journals/${entryId}/protect`, {
+      password
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Failed to protect journal entry' };
+  }
+};
+
+// Unlock a protected journal entry
 export const unlockProtectedEntry = async (entryId, password = null, useBiometrics = false) => {
   try {
     // If using biometrics, attempt biometric authentication
@@ -246,5 +264,17 @@ export const unlockProtectedEntry = async (entryId, password = null, useBiometri
     return response.data;
   } catch (error) {
     throw error.response?.data || { error: 'Failed to unlock journal entry' };
+  }
+};
+
+// Remove protection from a journal entry
+export const unprotectJournalEntry = async (entryId, password) => {
+  try {
+    const response = await api.post(`/journals/${entryId}/unprotect`, {
+      password
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Failed to remove protection from journal entry' };
   }
 };

@@ -91,7 +91,7 @@ export default function Login() {
         <StatusBar style="dark" />
         <View style={styles.header}>
           <Image
-            source={require('../../assets/images/logo-new.jpg')}
+            source={require('../../assets/images/logo-final.jpg')}
             style={styles.logo}
           />
             <Text style={styles.title}>Welcome to</Text>
@@ -125,9 +125,11 @@ export default function Login() {
             />
           </View>
 
-          <TouchableOpacity style={styles.forgotPassword}>
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
+          <Link href="/forgot-password" asChild>
+            <TouchableOpacity style={styles.forgotPassword}>
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </TouchableOpacity>
+          </Link>
 
           <TouchableOpacity 
             style={[styles.button, isLoading && styles.buttonDisabled]} 
