@@ -91,7 +91,7 @@ export default function Login() {
         <StatusBar style="dark" />
         <View style={styles.header}>
           <Image
-            source={require('../../assets/images/logo-final.jpg')}
+            source={require('../../assets/images/new daily muse logo.jpg')}
             style={styles.logo}
           />
             <Text style={styles.title}>Welcome to</Text>

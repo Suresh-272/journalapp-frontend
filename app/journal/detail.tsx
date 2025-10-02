@@ -18,35 +18,75 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { getJournal, updateJournal, deleteJournal, unlockProtectedEntry, protectJournalEntry, unprotectJournalEntry } from '@/services/journalService';
-import { PrivacyToggle } from '../../components/PrivacyToggle';
+import { IOSStylePrivacyToggle } from '../../components/IOSStylePrivacyToggle';
 import { UnlockModal } from '../../components/UnlockModal';
 
 const { width, height } = Dimensions.get('window');
+const isTablet = width > 768;
+const isSmallDevice = width < 375;
 
-// Custom color theme for the journal detail screen - matching other screens
+// Enhanced dual-theme design matching home screen
+const personalTheme = {
+  primary: '#A9745A', // Caramel Brown - Main ribbon/notebook color
+  secondary: '#8B5E3C', // Chestnut Brown - Gradient highlight
+  background: '#F5EDE1', // Light Beige - Clean background tone
+  cardBackground: '#FFFFFF',
+  accent: '#A9745A', // Caramel Brown accent
+  text: '#4B2E2A', // Espresso Brown - For main text
+  textSecondary: '#8B5E3C', // Chestnut Brown for secondary text
+  border: '#D4C0A8', // Lighter brown border
+  highlight: '#F0E6D7', // Very light warm highlight
+  shadow: 'rgba(75, 46, 42, 0.15)', // Espresso Brown shadow
+  // Compatibility properties
+  tint: '#D4C0A8',
+  tabIconDefault: '#8B5E3C',
+  pastelPink: '#F0E6D7',
+  pastelBlue: '#D4C0A8',
+};
+
+const professionalTheme = {
+  primary: '#6B4E3D', // Deep professional brown - darker than personal
+  secondary: '#8B6F47', // Rich brown secondary
+  background: '#F8F5F1', // Professional light beige
+  cardBackground: '#FFFFFF',
+  accent: '#9B7B5A', // Professional brown accent
+  text: '#3D2B1F', // Very dark brown for professional text
+  textSecondary: '#6B4E3D', // Deep brown for secondary text
+  border: '#D1C7B8', // Professional light brown border
+  highlight: '#F2EDE5', // Professional light highlight
+  shadow: 'rgba(61, 43, 31, 0.15)', // Professional dark brown shadow
+  success: '#7A8471', // Muted green-brown for completed tasks
+  warning: '#B8956A', // Warm brown for pending tasks
+  // Compatibility properties
+  tint: '#D1C7B8',
+  tabIconDefault: '#6B4E3D',
+  pastelPink: '#F2EDE5',
+  pastelBlue: '#D1C7B8',
+};
+
+// Legacy theme for backward compatibility
 const journalTheme = {
-  // Warm, earthy brown and beige colors inspired by the image
-  headerBrown: '#8B6B4C', // Rich brown for header
-  warmBeige: '#F7F3ED', // Very light warm beige background
-  cardBeige: '#F0E8D8', // Light cream for cards and sections
-  controlBeige: '#E8DCC8', // Warm beige for control panels
-  darkBrown: '#5D4E37', // Dark brown for text
-  mediumBrown: '#8B7355', // Medium brown for secondary text
-  warmAccent: '#B8956A', // Warm accent for highlights
-  navBrown: '#6B5B4F', // Dark brown for navigation
-  lightBrown: '#D4C4B0', // Light brown for borders
-  // Additional properties needed for compatibility
-  background: '#F7F3ED', // Same as warmBeige
-  text: '#5D4E37', // Same as darkBrown
-  tint: '#E8DCC8', // Same as controlBeige
-  cardBackground: '#F0E8D8', // Same as cardBeige
-  tabIconDefault: '#8B7355', // Same as mediumBrown
-  pastelPink: '#F0E8D8', // Same as cardBeige
-  pastelBlue: '#E8DCC8', // Same as controlBeige
+  headerBrown: '#8B6B4C',
+  warmBeige: '#F7F3ED',
+  cardBeige: '#F0E8D8',
+  controlBeige: '#E8DCC8',
+  darkBrown: '#5D4E37',
+  mediumBrown: '#8B7355',
+  warmAccent: '#B8956A',
+  navBrown: '#6B5B4F',
+  lightBrown: '#D4C4B0',
+  background: '#F7F3ED',
+  text: '#5D4E37',
+  tint: '#E8DCC8',
+  cardBackground: '#F0E8D8',
+  tabIconDefault: '#8B7355',
+  pastelPink: '#F0E8D8',
+  pastelBlue: '#E8DCC8',
 };
 
 // Type definitions
@@ -198,7 +238,9 @@ const CategoryModal = ({ visible, onClose, onSelect, selectedCategory }: {
 export default function JournalDetailScreen() {
   const params = useLocalSearchParams();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const journalId = params.id as string;
+  const isPreUnlocked = params.unlocked === 'true';
   
   const [journal, setJournal] = useState<JournalEntry | null>(null);
   const [title, setTitle] = useState('');
@@ -216,12 +258,20 @@ export default function JournalDetailScreen() {
   const [selectedImageUri, setSelectedImageUri] = useState('');
   const [isProtected, setIsProtected] = useState(false);
   const [entryPassword, setEntryPassword] = useState('');
+  const [isInitializing, setIsInitializing] = useState(true);
   
   const textInputRef = useRef<TextInput>(null);
   const contentInputRef = useRef<TextInput>(null);
   
   const colorScheme = useColorScheme();
-  const theme = journalTheme;
+  
+  // Get theme based on journal category
+  const getTheme = () => {
+    if (!journal) return personalTheme;
+    return journal.category === 'professional' ? professionalTheme : personalTheme;
+  };
+  
+  const theme = getTheme();
 
   // Handle keyboard visibility
   useEffect(() => {
@@ -238,15 +288,62 @@ export default function JournalDetailScreen() {
     };
   }, []);
 
-  // Fetch journal data
+  // Initialize journal data
   useEffect(() => {
-    if (journalId) {
+    if (isPreUnlocked && params.title && params.content) {
+      console.log('Setting pre-unlocked journal data from params');
+      try {
+        const preUnlockedJournal: JournalEntry = {
+          _id: journalId,
+          title: params.title as string,
+          content: params.content as string,
+          category: (params.category as string) || 'personal',
+          location: (params.location as string) || '',
+          mood: (params.mood as string) || 'neutral',
+          tags: params.tags ? JSON.parse(params.tags as string) : [],
+          isProtected: true,
+          media: params.media ? JSON.parse(params.media as string) : [],
+          createdAt: (params.createdAt as string) || new Date().toISOString(),
+          updatedAt: (params.updatedAt as string) || new Date().toISOString()
+        };
+        
+        setJournal(preUnlockedJournal);
+        setTitle(preUnlockedJournal.title);
+        setContent(preUnlockedJournal.content);
+        setCategory(preUnlockedJournal.category);
+        setLocation(preUnlockedJournal.location || '');
+        setIsProtected(true);
+        setIsUnlocked(true);
+        
+        // Convert media to photos format
+        const journalPhotos: Photo[] = preUnlockedJournal.media
+          .filter((m: any) => m.type === 'image')
+          .map((m: any) => ({
+            uri: m.url,
+            type: 'photo',
+            timestamp: Date.now(),
+            fileName: `photo_${Date.now()}.jpg`
+          }));
+        setPhotos(journalPhotos);
+        setIsInitializing(false);
+        
+      } catch (error) {
+        console.error('Error parsing pre-unlocked journal data:', error);
+        // Fallback to fetching from API
+        fetchJournal();
+      }
+    } else if (journalId && !isPreUnlocked) {
       fetchJournal();
     }
-  }, [journalId]);
+  }, [journalId, isPreUnlocked]);
 
   // Check if entry is protected and show unlock modal
   useEffect(() => {
+    if (isPreUnlocked) {
+      // Journal is already unlocked from home screen
+      return;
+    }
+    
     if (journal && journal.isProtected && !isUnlocked) {
       console.log('Protected journal detected, showing unlock modal');
       setShowUnlockModal(true);
@@ -254,7 +351,7 @@ export default function JournalDetailScreen() {
       console.log('Non-protected journal, unlocking automatically');
       setIsUnlocked(true);
     }
-  }, [journal, isUnlocked]);
+  }, [journal, isUnlocked, isPreUnlocked]);
 
   // Reset protection state for each new entry
   useEffect(() => {
@@ -300,6 +397,8 @@ export default function JournalDetailScreen() {
     } catch (error) {
       console.error('Error fetching journal:', error);
       Alert.alert('Error', 'Failed to load journal entry');
+    } finally {
+      setIsInitializing(false);
     }
   };
 
@@ -326,12 +425,12 @@ export default function JournalDetailScreen() {
   };
 
   // Privacy handling functions
-  const handleUnlock = async (password: string, useBiometrics: boolean) => {
+  const handleUnlock = async (password: string) => {
     try {
       if (!journalId) return;
-      console.log('Attempting to unlock journal:', journalId, 'with password:', password ? '***' : 'biometrics');
+      console.log('Attempting to unlock journal:', journalId, 'with password:', password ? '***' : 'empty');
       
-      const response = await unlockProtectedEntry(journalId, password || undefined, useBiometrics);
+      const response = await unlockProtectedEntry(journalId, password as any, false);
       if (response.success) {
         const unlockedJournal = response.data;
         console.log('Successfully unlocked journal:', {
@@ -354,7 +453,7 @@ export default function JournalDetailScreen() {
     }
   };
 
-  const handleProtectEntry = async (password: string, useBiometrics: boolean) => {
+  const handleProtectEntry = async (password: string) => {
     try {
       if (!journalId) return;
       await protectJournalEntry(journalId, password);
@@ -530,7 +629,7 @@ export default function JournalDetailScreen() {
     });
   };
 
-  if (!journal) {
+  if (isInitializing || !journal) {
     return (
       <View style={[styles.container, { backgroundColor: theme.background }]}>
         <StatusBar barStyle="dark-content" backgroundColor={theme.tint} />
@@ -551,39 +650,59 @@ export default function JournalDetailScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        <StatusBar barStyle="dark-content" backgroundColor={theme.tint} />
+        <StatusBar barStyle="dark-content" backgroundColor={theme.background} />
         
         {/* Header */}
-        <View style={[styles.header, { backgroundColor: theme.tint }]}>
+        <View style={[styles.header, { 
+          backgroundColor: theme.background,
+          paddingTop: insets.top + 16,
+          paddingHorizontal: isTablet ? 32 : 20
+        }]}>
           <View style={styles.headerLeft}>
-            <TouchableOpacity style={styles.backButton} onPress={handleCancel}>
+            <TouchableOpacity style={[styles.backButton, { backgroundColor: theme.highlight }]} onPress={handleCancel}>
               <Text style={[styles.backButtonText, { color: theme.text }]}>←</Text>
             </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: theme.text }]}>
-              {isEditing ? 'Edit Entry' : 'View Entry'}
-            </Text>
+            <View style={styles.headerTitleContainer}>
+              <Text style={[styles.headerTitle, { 
+                color: theme.text,
+                fontSize: isTablet ? 24 : 20
+              }]}>
+                {isEditing ? 'Edit Entry' : (journal?.category === 'professional' ? 'Work Reflection' : 'Memory')}
+              </Text>
+              <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
+                {journal?.category === 'professional' ? 'Professional Growth' : 'Personal Moment'}
+              </Text>
+            </View>
           </View>
           
           <View style={styles.headerControls}>
             {!isEditing && (
-              <TouchableOpacity style={[styles.editButton, { backgroundColor: theme.pastelPink }]} onPress={() => setIsEditing(true)}>
-                <Text style={[styles.editButtonText, { color: theme.text }]}>Edit</Text>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity 
+                  style={[styles.deleteIconButton, { backgroundColor: theme.highlight }]} 
+                  onPress={handleDelete}
+                >
+                  <Text style={[styles.deleteIconText, { color: '#E74C3C' }]}>🗑️</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.editButton, { backgroundColor: theme.primary }]} onPress={() => setIsEditing(true)}>
+                  <Text style={[styles.editButtonText, { color: '#FFFFFF' }]}>✏️</Text>
+                </TouchableOpacity>
+              </>
             )}
             {isEditing && (
               <>
-                <TouchableOpacity style={styles.headerButton} onPress={handleCancel}>
-                  <Text style={[styles.headerButtonText, { color: theme.text }]}>Cancel</Text>
+                <TouchableOpacity style={[styles.cancelButton, { backgroundColor: theme.border }]} onPress={handleCancel}>
+                  <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  style={[styles.saveButton, { backgroundColor: theme.pastelPink }]} 
+                  style={[styles.saveButton, { backgroundColor: theme.primary }]} 
                   onPress={handleSave}
                   disabled={isSaving}
                 >
                   {isSaving ? (
-                    <ActivityIndicator size="small" color={theme.text} />
+                    <ActivityIndicator size="small" color="#FFFFFF" />
                   ) : (
-                    <Text style={[styles.saveButtonText, { color: theme.text }]}>Save</Text>
+                    <Text style={[styles.saveButtonText, { color: '#FFFFFF' }]}>💾</Text>
                   )}
                 </TouchableOpacity>
               </>
@@ -596,110 +715,110 @@ export default function JournalDetailScreen() {
           style={[styles.contentContainer, { backgroundColor: theme.background }]} 
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingBottom: isKeyboardVisible ? 100 : 20 }}
+          contentContainerStyle={{ 
+            paddingBottom: isKeyboardVisible ? Math.max(100, insets.bottom + 60) : Math.max(insets.bottom + 20, 40),
+            paddingHorizontal: isTablet ? Math.max(32, width * 0.04) : 0,
+            maxWidth: isTablet ? Math.min(800, width * 0.9) : '100%',
+            alignSelf: isTablet ? 'center' : 'stretch',
+            width: isTablet ? '100%' : 'auto'
+          }}
         >
           {/* Journal Info */}
-          <View style={[styles.journalInfo, { borderBottomColor: theme.pastelPink }]}>
-            <Text style={[styles.dateText, { color: theme.tabIconDefault }]}>
+          <View style={[styles.journalInfo, { 
+            borderBottomColor: theme.pastelPink,
+            paddingHorizontal: isTablet ? 0 : Math.max(16, width * 0.04),
+            paddingVertical: Math.max(12, height * 0.015)
+          }]}>
+            <Text style={[styles.dateText, { 
+              color: theme.tabIconDefault,
+              fontSize: Math.max(isSmallDevice ? 13 : 14, width * 0.035)
+            }]}>
               {formatDate(journal.createdAt)}
             </Text>
             {journal.updatedAt !== journal.createdAt && (
-              <Text style={[styles.updatedText, { color: theme.tabIconDefault }]}>
+              <Text style={[styles.updatedText, { 
+                color: theme.tabIconDefault,
+                fontSize: Math.max(isSmallDevice ? 11 : 12, width * 0.03)
+              }]}>
                 Last updated: {formatDate(journal.updatedAt)}
               </Text>
             )}
           </View>
 
           {/* Category Display */}
-          <View style={[styles.categoryContainer, { borderBottomColor: theme.pastelPink }]}>
-            <Text style={[styles.categoryLabel, { color: theme.text }]}>Category</Text>
+          <View style={[styles.categoryContainer, { 
+            borderBottomColor: theme.pastelPink,
+            paddingHorizontal: isTablet ? 0 : Math.max(16, width * 0.04),
+            paddingVertical: Math.max(12, height * 0.015)
+          }]}>
+            <Text style={[styles.categoryLabel, { 
+              color: theme.text,
+              fontSize: Math.max(isTablet ? 20 : 18, width * 0.045)
+            }]}>Category</Text>
             {isEditing ? (
               <TouchableOpacity 
                 style={[styles.categorySelector, { backgroundColor: theme.pastelPink }]}
                 onPress={() => setShowCategoryModal(true)}
               >
                 <View style={styles.categoryDisplay}>
-                  <Text style={styles.categoryIcon}>{categoryInfo.icon}</Text>
-                  <Text style={[styles.categoryText, { color: theme.text }]}>{categoryInfo.label}</Text>
+                  <Text style={[styles.categoryIcon, { fontSize: isTablet ? 24 : 20 }]}>{categoryInfo.icon}</Text>
+                  <Text style={[styles.categoryText, { 
+                    color: theme.text,
+                    fontSize: isTablet ? 20 : 18
+                  }]}>{categoryInfo.label}</Text>
                 </View>
-                <Text style={[styles.categoryChevron, { color: theme.tint }]}>›</Text>
+                <Text style={[styles.categoryChevron, { 
+                  color: theme.tint,
+                  fontSize: isTablet ? 24 : 20
+                }]}>›</Text>
               </TouchableOpacity>
             ) : (
-              <View style={[styles.categoryDisplay, { backgroundColor: theme.pastelPink, padding: 12, borderRadius: 8 }]}>
-                <Text style={styles.categoryIcon}>{categoryInfo.icon}</Text>
-                <Text style={[styles.categoryText, { color: theme.text }]}>{categoryInfo.label}</Text>
+              <View style={[styles.categoryDisplay, { 
+                backgroundColor: theme.pastelPink, 
+                padding: isTablet ? 16 : 12, 
+                borderRadius: 8 
+              }]}>
+                <Text style={[styles.categoryIcon, { fontSize: isTablet ? 24 : 20 }]}>{categoryInfo.icon}</Text>
+                <Text style={[styles.categoryText, { 
+                  color: theme.text,
+                  fontSize: isTablet ? 20 : 18
+                }]}>{categoryInfo.label}</Text>
               </View>
             )}
           </View>
 
           {/* Privacy Toggle - Only show when editing */}
           {isEditing && (
-            <View style={[styles.privacyContainer, { borderBottomColor: theme.pastelPink }]}>
-              <Text style={[styles.privacyLabel, { color: theme.text }]}>Privacy</Text>
-              <View style={styles.compactPrivacyToggle}>
-                <Text style={[styles.compactPrivacyLabel, { color: theme.text }]}>🔒</Text>
-                <TouchableOpacity 
-                  style={[
-                    styles.compactToggleButton, 
-                    { backgroundColor: isProtected ? theme.tint : theme.pastelPink }
-                  ]}
-                  onPress={() => {
-                    if (isProtected) {
-                      Alert.prompt(
-                        'Unprotect Entry',
-                        'Enter the password to unprotect this entry:',
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          { 
-                            text: 'Unprotect', 
-                            onPress: (password) => {
-                              if (password === entryPassword) {
-                                handleUnprotectEntry(password);
-                              } else {
-                                Alert.alert('Error', 'Incorrect password');
-                              }
-                            }
-                          }
-                        ],
-                        'secure-text'
-                      );
-                    } else {
-                      // Show password input modal for protection
-                      Alert.prompt(
-                        'Protect Entry',
-                        'Enter a password to protect this entry:',
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          { 
-                            text: 'Protect', 
-                            onPress: (password) => {
-                              if (password && password.length >= 6) {
-                                handleProtectEntry(password, false);
-                              } else {
-                                Alert.alert('Error', 'Password must be at least 6 characters long');
-                              }
-                            }
-                          }
-                        ],
-                        'secure-text'
-                      );
-                    }
-                  }}
-                >
-                  <Text style={[styles.compactToggleText, { color: theme.text }]}>
-                    {isProtected ? 'Protected' : 'Public'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+            <View style={[styles.privacyContainer, { 
+              borderBottomColor: theme.pastelPink,
+              paddingHorizontal: isTablet ? 0 : 16
+            }]}>
+              <Text style={[styles.privacyLabel, { 
+                color: theme.text,
+                fontSize: isTablet ? 20 : 18
+              }]}>Privacy</Text>
+              <IOSStylePrivacyToggle
+                isProtected={isProtected}
+                onProtect={handleProtectEntry}
+                onUnprotect={handleUnprotectEntry}
+              />
             </View>
           )}
 
           {/* Text Input Area - Only show if not protected or if unlocked */}
           {(!journal.isProtected || isUnlocked) ? (
-            <View style={styles.textInputContainer}>
+            <View style={[styles.textInputContainer, {
+              paddingHorizontal: isTablet ? 0 : Math.max(16, width * 0.04),
+              paddingTop: Math.max(20, height * 0.025)
+            }]}>
               <TextInput
                 ref={textInputRef}
-                style={[styles.titleInput, { color: theme.text }]}
+                style={[styles.titleInput, { 
+                  color: theme.text,
+                  fontSize: Math.max(isTablet ? 32 : (isSmallDevice ? 24 : 26), width * 0.065),
+                  lineHeight: Math.max(isTablet ? 42 : (isSmallDevice ? 32 : 34), width * 0.085),
+                  marginBottom: Math.max(20, height * 0.025)
+                }]}
                 placeholder="Title"
                 placeholderTextColor={theme.tabIconDefault}
                 value={title}
@@ -710,7 +829,12 @@ export default function JournalDetailScreen() {
               
               <TextInput
                 ref={contentInputRef}
-                style={[styles.contentInput, { color: theme.text }]}
+                style={[styles.contentInput, { 
+                  color: theme.text,
+                  fontSize: Math.max(isTablet ? 20 : (isSmallDevice ? 16 : 18), width * 0.045),
+                  lineHeight: Math.max(isTablet ? 32 : (isSmallDevice ? 24 : 28), width * 0.065),
+                  minHeight: Math.max(isTablet ? 300 : (isSmallDevice ? 150 : 200), height * 0.25)
+                }]}
                 placeholder="What's on your mind?"
                 placeholderTextColor={theme.tabIconDefault}
                 value={content}
@@ -721,8 +845,13 @@ export default function JournalDetailScreen() {
               />
             </View>
           ) : (
-            <View style={styles.protectedContentPlaceholder}>
-              <Text style={[styles.protectedPlaceholderText, { color: theme.tabIconDefault }]}>
+            <View style={[styles.protectedContentPlaceholder, {
+              paddingHorizontal: isTablet ? 0 : 16
+            }]}>
+              <Text style={[styles.protectedPlaceholderText, { 
+                color: theme.tabIconDefault,
+                fontSize: isTablet ? 18 : 16
+              }]}>
                 🔒 This entry is protected. Enter the password to view content.
               </Text>
             </View>
@@ -731,12 +860,29 @@ export default function JournalDetailScreen() {
           {/* Photo Gallery - Only show if not protected or if unlocked */}
           {photos.length > 0 && (!journal.isProtected || isUnlocked) && (
             <View style={styles.photoGallery}>
-              <Text style={[styles.photoGalleryTitle, { color: theme.text }]}>Photos ({photos.length})</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <Text style={[styles.photoGalleryTitle, { 
+                color: theme.text,
+                fontSize: isTablet ? 20 : 18,
+                marginLeft: isTablet ? 0 : 16
+              }]}>Photos ({photos.length})</Text>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{
+                  paddingLeft: isTablet ? 0 : 16,
+                  paddingRight: isTablet ? 0 : 16
+                }}
+              >
                 {photos.map((photo, index) => (
                   <TouchableOpacity key={index} onPress={() => handleImageClick(photo.uri)}>
-                    <View style={styles.photoItem}>
-                      <Image source={{ uri: photo.uri }} style={styles.photoImage} />
+                    <View style={[styles.photoItem, {
+                      marginLeft: isTablet ? (index === 0 ? 0 : 16) : 0,
+                      marginRight: isTablet ? 0 : 8
+                    }]}>
+                      <Image source={{ uri: photo.uri }} style={[styles.photoImage, {
+                        width: isTablet ? 160 : (isSmallDevice ? 100 : 120),
+                        height: isTablet ? 160 : (isSmallDevice ? 100 : 120)
+                      }]} />
                       {isEditing && (
                         <TouchableOpacity 
                           style={[styles.removePhotoButton, { backgroundColor: theme.tint }]}
@@ -749,8 +895,17 @@ export default function JournalDetailScreen() {
                   </TouchableOpacity>
                 ))}
                 {isEditing && (
-                  <TouchableOpacity style={[styles.addPhotoButton, { backgroundColor: theme.background, borderColor: theme.tint }]} onPress={handleImageLibrary}>
-                    <Text style={[styles.addPhotoText, { color: theme.tint }]}>+</Text>
+                  <TouchableOpacity style={[styles.addPhotoButton, { 
+                    backgroundColor: theme.background, 
+                    borderColor: theme.tint,
+                    width: isTablet ? 160 : (isSmallDevice ? 100 : 120),
+                    height: isTablet ? 160 : (isSmallDevice ? 100 : 120),
+                    marginLeft: isTablet ? 16 : 8
+                  }]} onPress={handleImageLibrary}>
+                    <Text style={[styles.addPhotoText, { 
+                      color: theme.tint,
+                      fontSize: isTablet ? 42 : (isSmallDevice ? 30 : 36)
+                    }]}>+</Text>
                   </TouchableOpacity>
                 )}
               </ScrollView>
@@ -759,21 +914,20 @@ export default function JournalDetailScreen() {
 
           {/* Location Display - Only show if not protected or if unlocked */}
           {location && (!journal.isProtected || isUnlocked) && (
-            <View style={[styles.locationContainer, { backgroundColor: theme.pastelPink }]}>
-              <Text style={styles.locationIcon}>📍</Text>
-              <Text style={[styles.locationText, { color: theme.text }]}>{location}</Text>
+            <View style={[styles.locationContainer, { 
+              backgroundColor: theme.pastelPink,
+              marginHorizontal: isTablet ? 0 : 16
+            }]}>
+              <Text style={[styles.locationIcon, {
+                fontSize: isTablet ? 18 : 16
+              }]}>📍</Text>
+              <Text style={[styles.locationText, { 
+                color: theme.text,
+                fontSize: isTablet ? 16 : 14
+              }]}>{location}</Text>
             </View>
           )}
 
-          {/* Delete Button */}
-          {!isEditing && (
-            <TouchableOpacity 
-              style={[styles.deleteButton, { backgroundColor: '#E74C3C' }]} 
-              onPress={handleDelete}
-            >
-              <Text style={[styles.deleteButtonText, { color: '#FFFFFF' }]}>Delete Entry</Text>
-            </TouchableOpacity>
-          )}
         </ScrollView>
 
         {/* Category Selection Modal */}
@@ -814,130 +968,170 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
   },
   loadingText: {
-    fontSize: 16,
+    fontSize: isTablet ? 18 : 16,
     marginTop: 16,
+    textAlign: 'center',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 60,
     paddingBottom: 16,
+    minHeight: isTablet ? 120 : 100,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   backButton: {
-    padding: 8,
-    marginRight: 12,
+    padding: isTablet ? 12 : 8,
+    marginRight: isTablet ? 16 : 12,
+    minWidth: isTablet ? 48 : 40,
+    minHeight: isTablet ? 48 : 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: isTablet ? 24 : 20,
   },
   backButtonText: {
-    fontSize: 24,
+    fontSize: isTablet ? 28 : 24,
     fontWeight: '600',
   },
+  headerTitleContainer: {
+    flex: 1,
+  },
   headerTitle: {
-    fontSize: 20,
     fontFamily: 'Inter-Bold',
-    lineHeight: 26,
+    lineHeight: isTablet ? 32 : 26,
+  },
+  headerSubtitle: {
+    fontSize: isTablet ? 16 : 14,
+    fontFamily: 'Inter-Regular',
+    marginTop: 2,
+    opacity: 0.8,
   },
   headerControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: isTablet ? 16 : 12,
   },
   headerButton: {
-    padding: 8,
+    padding: isTablet ? 12 : 8,
+    minWidth: isTablet ? 44 : 36,
+    minHeight: isTablet ? 44 : 36,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerButtonText: {
-    fontSize: 16,
+    fontSize: isTablet ? 18 : 16,
     fontWeight: '600',
   },
   editButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: isTablet ? 16 : 12,
+    paddingVertical: isTablet ? 12 : 8,
+    borderRadius: isTablet ? 22 : 18,
+    minWidth: isTablet ? 48 : 40,
+    minHeight: isTablet ? 48 : 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   editButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: isTablet ? 18 : 16,
+  },
+  deleteIconButton: {
+    paddingHorizontal: isTablet ? 16 : 12,
+    paddingVertical: isTablet ? 12 : 8,
+    borderRadius: isTablet ? 22 : 18,
+    minWidth: isTablet ? 48 : 40,
+    minHeight: isTablet ? 48 : 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: 'rgba(231, 76, 60, 0.2)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  deleteIconText: {
+    fontSize: isTablet ? 18 : 16,
+  },
+  cancelButton: {
+    paddingHorizontal: isTablet ? 16 : 12,
+    paddingVertical: isTablet ? 10 : 8,
+    borderRadius: isTablet ? 20 : 16,
+    minWidth: isTablet ? 70 : 60,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: isTablet ? 16 : 14,
+    fontWeight: '500',
   },
   saveButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    minWidth: 60,
+    paddingHorizontal: isTablet ? 20 : 16,
+    paddingVertical: isTablet ? 12 : 8,
+    borderRadius: isTablet ? 24 : 20,
+    minWidth: isTablet ? 80 : 70,
     alignItems: 'center',
   },
   saveButtonText: {
-    fontSize: 16,
+    fontSize: isTablet ? 16 : 14,
     fontWeight: '600',
   },
   contentContainer: {
     flex: 1,
   },
   journalInfo: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: isTablet ? 16 : 12,
     borderBottomWidth: 1,
   },
   dateText: {
-    fontSize: 14,
     fontWeight: '500',
   },
   updatedText: {
-    fontSize: 12,
     marginTop: 4,
   },
   categoryContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: isTablet ? 16 : 12,
     borderBottomWidth: 1,
   },
   categoryLabel: {
-    fontSize: 18,
     fontFamily: 'Inter-SemiBold',
-    marginBottom: 8,
-    lineHeight: 24,
+    marginBottom: isTablet ? 12 : 8,
+    lineHeight: isTablet ? 28 : 24,
   },
   categorySelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: isTablet ? 16 : 12,
+    paddingHorizontal: isTablet ? 20 : 16,
+    paddingVertical: isTablet ? 16 : 12,
   },
   categoryDisplay: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   categoryText: {
-    fontSize: 18,
     fontFamily: 'Inter-Regular',
-    marginLeft: 12,
-    lineHeight: 24,
+    marginLeft: isTablet ? 16 : 12,
+    lineHeight: isTablet ? 28 : 24,
   },
   categoryChevron: {
-    fontSize: 20,
     fontWeight: '600',
   },
-  categoryIcon: {
-    fontSize: 20,
-  },
+  categoryIcon: {},
+  // Icon sizes are handled inline in the component
   privacyContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: isTablet ? 16 : 12,
     borderBottomWidth: 1,
   },
   privacyLabel: {
-    fontSize: 18,
     fontFamily: 'Inter-SemiBold',
-    marginBottom: 8,
-    lineHeight: 24,
+    marginBottom: isTablet ? 12 : 8,
+    lineHeight: isTablet ? 28 : 24,
   },
   compactPrivacyToggle: {
     flexDirection: 'row',
@@ -961,191 +1155,162 @@ const styles = StyleSheet.create({
   },
   textInputContainer: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingTop: isTablet ? 28 : 20,
   },
   titleInput: {
-    fontSize: 26,
     fontFamily: 'Inter-Bold',
-    marginBottom: 20,
-    minHeight: 40,
-    lineHeight: 34,
+    marginBottom: isTablet ? 28 : 20,
+    minHeight: isTablet ? 50 : 40,
   },
   contentInput: {
-    fontSize: 18,
     fontFamily: 'Inter-Regular',
-    lineHeight: 28,
-    minHeight: 200,
     textAlignVertical: 'top',
   },
   protectedContentPlaceholder: {
-    paddingHorizontal: 16,
-    paddingVertical: 40,
+    paddingVertical: isTablet ? 60 : 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
   protectedPlaceholderText: {
-    fontSize: 16,
     fontFamily: 'Inter-Regular',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: isTablet ? 28 : 24,
   },
   photoGallery: {
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: isTablet ? 28 : 20,
+    marginBottom: isTablet ? 28 : 20,
   },
   photoGalleryTitle: {
-    fontSize: 18,
     fontFamily: 'Inter-SemiBold',
-    marginLeft: 16,
-    marginBottom: 12,
-    lineHeight: 24,
+    marginBottom: isTablet ? 16 : 12,
+    lineHeight: isTablet ? 28 : 24,
   },
   photoItem: {
     position: 'relative',
-    marginLeft: 16,
-    marginRight: 8,
   },
   photoImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 12,
+    borderRadius: isTablet ? 16 : 12,
   },
   removePhotoButton: {
     position: 'absolute',
-    top: -8,
-    right: -8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    top: isTablet ? -12 : -8,
+    right: isTablet ? -12 : -8,
+    width: isTablet ? 32 : 24,
+    height: isTablet ? 32 : 24,
+    borderRadius: isTablet ? 16 : 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   removePhotoText: {
-    fontSize: 16,
+    fontSize: isTablet ? 20 : 16,
     fontWeight: '600',
   },
   addPhotoButton: {
-    width: 120,
-    height: 120,
-    borderRadius: 12,
+    borderRadius: isTablet ? 16 : 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
-    marginRight: 16,
     borderWidth: 2,
     borderStyle: 'dashed',
   },
   addPhotoText: {
-    fontSize: 36,
     fontWeight: '300',
   },
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginTop: 16,
-    padding: 12,
-    borderRadius: 8,
+    marginTop: isTablet ? 20 : 16,
+    padding: isTablet ? 16 : 12,
+    borderRadius: isTablet ? 12 : 8,
   },
   locationIcon: {
-    fontSize: 16,
-    marginRight: 8,
+    marginRight: isTablet ? 12 : 8,
   },
-  locationText: {
-    fontSize: 14,
-  },
-  deleteButton: {
-    marginHorizontal: 16,
-    marginTop: 32,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  deleteButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  locationText: {},
   // Modal Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(43, 43, 43, 0.5)',
-    justifyContent: 'flex-end',
+    justifyContent: isTablet ? 'center' : 'flex-end',
+    alignItems: isTablet ? 'center' : 'stretch',
   },
   modalContent: {
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 34,
+    borderTopLeftRadius: isTablet ? 25 : 25,
+    borderTopRightRadius: isTablet ? 25 : 25,
+    borderBottomLeftRadius: isTablet ? 25 : 0,
+    borderBottomRightRadius: isTablet ? 25 : 0,
+    paddingHorizontal: isTablet ? 24 : 16,
+    paddingTop: isTablet ? 24 : 16,
+    paddingBottom: isTablet ? 24 : 34,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 10,
+    maxWidth: isTablet ? 500 : '100%',
+    width: isTablet ? '90%' : '100%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: 16,
+    paddingBottom: isTablet ? 20 : 16,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(139, 111, 71, 0.15)',
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: isTablet ? 22 : 18,
     fontWeight: '600',
   },
   modalCloseButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: isTablet ? 36 : 30,
+    height: isTablet ? 36 : 30,
+    borderRadius: isTablet ? 18 : 15,
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalCloseText: {
-    fontSize: 16,
+    fontSize: isTablet ? 18 : 16,
     fontWeight: '600',
   },
   categoryList: {
-    marginTop: 16,
-    marginBottom: 24,
+    marginTop: isTablet ? 20 : 16,
+    marginBottom: isTablet ? 32 : 24,
   },
   categoryOption: {
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: isTablet ? 16 : 12,
+    padding: isTablet ? 20 : 16,
+    marginBottom: isTablet ? 16 : 12,
     borderWidth: 2,
   },
   categoryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: isTablet ? 12 : 8,
   },
   categoryTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   modalCategoryLabel: {
-    fontSize: 16,
+    fontSize: isTablet ? 18 : 16,
     fontWeight: '600',
   },
   categorySelectedIcon: {
-    fontSize: 18,
+    fontSize: isTablet ? 20 : 18,
     fontWeight: '700',
   },
   categoryDescription: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: isTablet ? 16 : 14,
+    lineHeight: isTablet ? 24 : 20,
   },
   modalConfirmButton: {
-    borderRadius: 20,
-    paddingVertical: 12,
+    borderRadius: isTablet ? 24 : 20,
+    paddingVertical: isTablet ? 16 : 12,
     alignItems: 'center',
   },
   modalConfirmText: {
-    fontSize: 16,
+    fontSize: isTablet ? 18 : 16,
     fontWeight: '600',
   },
   // Image Viewer Modal Styles
@@ -1157,26 +1322,26 @@ const styles = StyleSheet.create({
   },
   imageViewerCloseButton: {
     position: 'absolute',
-    top: 60,
-    right: 20,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    top: isTablet ? 80 : 60,
+    right: isTablet ? 32 : 20,
+    width: isTablet ? 60 : 50,
+    height: isTablet ? 60 : 50,
+    borderRadius: isTablet ? 30 : 25,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
   },
   imageViewerCloseButtonInner: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: isTablet ? 48 : 40,
+    height: isTablet ? 48 : 40,
+    borderRadius: isTablet ? 24 : 20,
     backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   imageViewerCloseText: {
-    fontSize: 24,
+    fontSize: isTablet ? 28 : 24,
     color: '#FFFFFF',
     fontWeight: 'bold',
   },
@@ -1185,9 +1350,13 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: isTablet ? 40 : 20,
+    paddingVertical: isTablet ? 40 : 20,
   },
   fullScreenImage: {
     width: '100%',
     height: '100%',
+    maxWidth: isTablet ? '90%' : '100%',
+    maxHeight: isTablet ? '90%' : '100%',
   },
 }); 

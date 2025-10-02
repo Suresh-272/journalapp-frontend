@@ -17,34 +17,50 @@ import {
   TouchableWithoutFeedback,
   Modal
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
-import { createJournalWithMedia, protectJournalEntry } from '../../services/journalService';
+import { createJournalWithMedia, protectJournalEntry, unprotectJournalEntry } from '../../services/journalService';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { PrivacyToggle } from '../../components/PrivacyToggle';
+import { IOSStylePrivacyToggle } from '../../components/IOSStylePrivacyToggle';
 
-// Custom color theme for the journal entry screen
-const journalTheme = {
-  // Warm, earthy brown and beige colors inspired by the image
-  headerBrown: '#8B6B4C', // Rich brown for header
-  warmBeige: '#F7F3ED', // Very light warm beige background
-  cardBeige: '#F0E8D8', // Light cream for cards and sections
-  controlBeige: '#E8DCC8', // Warm beige for control panels
-  darkBrown: '#5D4E37', // Dark brown for text
-  mediumBrown: '#8B7355', // Medium brown for secondary text
-  warmAccent: '#B8956A', // Warm accent for highlights
-  navBrown: '#6B5B4F', // Dark brown for navigation
-  lightBrown: '#D4C4B0', // Light brown for borders
-  // Additional properties needed for compatibility
-  background: '#F7F3ED', // Same as warmBeige
-  text: '#5D4E37', // Same as darkBrown
-  tint: '#E8DCC8', // Same as headerBrown
-  cardBackground: '#F0E8D8', // Same as cardBeige
-  tabIconDefault: '#8B7355', // Same as mediumBrown
-  pastelPink: '#F0E8D8', // Same as cardBeige
-  pastelBlue: '#E8DCC8', // Same as controlBeige
+// Enhanced dual-theme design matching home screen
+const personalTheme = {
+  primary: '#A9745A', // Caramel Brown - Main ribbon/notebook color
+  secondary: '#8B5E3C', // Chestnut Brown - Gradient highlight
+  background: '#F5EDE1', // Light Beige - Clean background tone
+  cardBackground: '#FFFFFF',
+  accent: '#A9745A', // Caramel Brown accent
+  text: '#4B2E2A', // Espresso Brown - For main text
+  textSecondary: '#8B5E3C', // Chestnut Brown for secondary text
+  border: '#D4C0A8', // Lighter brown border
+  highlight: '#F0E6D7', // Very light warm highlight
+  shadow: 'rgba(75, 46, 42, 0.15)', // Espresso Brown shadow
+  tint: '#D4C0A8',
+  tabIconDefault: '#8B5E3C',
+  pastelPink: '#F0E6D7',
+  pastelBlue: '#D4C0A8',
+};
+
+const professionalTheme = {
+  primary: '#6B4E3D', // Deep professional brown - darker than personal
+  secondary: '#8B6F47', // Rich brown secondary
+  background: '#F8F5F1', // Professional light beige
+  cardBackground: '#FFFFFF',
+  accent: '#9B7B5A', // Professional brown accent
+  text: '#3D2B1F', // Very dark brown for professional text
+  textSecondary: '#6B4E3D', // Deep brown for secondary text
+  border: '#D1C7B8', // Professional light brown border
+  highlight: '#F2EDE5', // Professional light highlight
+  shadow: 'rgba(61, 43, 31, 0.15)', // Professional dark brown shadow
+  success: '#7A8471', // Muted green-brown for completed tasks
+  warning: '#B8956A', // Warm brown for pending tasks
+  tint: '#D1C7B8',
+  tabIconDefault: '#6B4E3D',
+  pastelPink: '#F2EDE5',
+  pastelBlue: '#D1C7B8',
 };
 
 const { width, height } = Dimensions.get('window');
@@ -76,7 +92,7 @@ const CameraViewComponent = ({ onCapture, onClose }: { onCapture: (photo: Photo)
   const [isCapturing, setIsCapturing] = useState(false);
   const cameraRef = useRef<any>(null);
   const colorScheme = useColorScheme();
-  const theme = journalTheme;
+  const theme = personalTheme; // Use personal theme for camera
 
   const handleCapture = async () => {
     if (!cameraRef.current) return;
@@ -195,7 +211,7 @@ const CameraViewComponent = ({ onCapture, onClose }: { onCapture: (photo: Photo)
 // Category Selection Modal Component
 const CategoryModal = ({ visible, onClose, onSelect, selectedCategory }: CategoryModalProps) => {
   const colorScheme = useColorScheme();
-  const theme = journalTheme;
+  const theme = personalTheme; // Use personal theme for modal
   
   const categories = [
     { key: 'personal', label: 'Personal', icon: '👤', description: 'Personal thoughts, feelings, and experiences' },
@@ -267,7 +283,6 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
   const [photos, setPhotos] = useState<Array<Photo>>([]);
   const [showCamera, setShowCamera] = useState(false);
   const [activeTab, setActiveTab] = useState('text');
-  const [location, setLocation] = useState('');
   const [category, setCategory] = useState('personal'); // Default to personal
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
@@ -277,12 +292,20 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
   const contentInputRef = useRef<TextInput>(null);
   
   const colorScheme = useColorScheme();
-  const theme = journalTheme;
+  const getTheme = () => {
+    return category === 'professional' ? professionalTheme : personalTheme;
+  };
+  const theme = getTheme();
+  const insets = useSafeAreaInsets();
 
   // Handle keyboard visibility
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
       setIsKeyboardVisible(true);
+      // Hide camera if keyboard is shown
+      if (showCamera) {
+        setShowCamera(false);
+      }
     });
     const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
       setIsKeyboardVisible(false);
@@ -292,7 +315,7 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
       keyboardDidShowListener?.remove();
       keyboardDidHideListener?.remove();
     };
-  }, []);
+  }, [showCamera]);
 
   // Request permissions on component mount
   useEffect(() => {
@@ -401,7 +424,7 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
       const journalData = {
         title: title.trim() || 'Untitled Entry',
         content: content.trim(),
-        location: location || '',
+        location: '',
         category: category, // Ensure category is properly set
         mood: 'neutral',
         tags: []
@@ -411,7 +434,7 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
       console.log('Category being saved:', category);
       console.log('Protection status:', isProtected);
       
-      const response = await createJournalWithMedia(journalData, photos, isProtected, entryPassword);
+      const response = await createJournalWithMedia(journalData, photos, isProtected, (isProtected && entryPassword ? entryPassword : null) as any);
       
       console.log('Journal created successfully:', response);
       console.log('Saved category:', response.data?.category);
@@ -422,7 +445,6 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
           setTitle('');
           setContent('');
           setPhotos([]);
-          setLocation('');
           setCategory('personal');
           setActiveTab('text');
           
@@ -459,7 +481,6 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
               setTitle('');
               setContent('');
               setPhotos([]);
-              setLocation('');
               setCategory('personal');
               setActiveTab('text');
               
@@ -536,26 +557,37 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
   };
 
   // Privacy handling functions
-  const handleProtectEntry = async (password: string, useBiometrics: boolean) => {
-    setIsProtected(true);
-    setEntryPassword(password);
+  const handleProtectEntry = async (password: string) => {
+    try {
+      // For new entries, we'll store the password locally and apply protection when saving
+      setIsProtected(true);
+      setEntryPassword(password);
+    } catch (error: any) {
+      throw error;
+    }
   };
 
   const handleUnprotectEntry = async (password: string) => {
-    if (password === entryPassword) {
-      setIsProtected(false);
-      setEntryPassword('');
-    } else {
-      throw new Error('Incorrect password');
+    try {
+      if (password === entryPassword) {
+        setIsProtected(false);
+        setEntryPassword('');
+      } else {
+        throw new Error('Incorrect password');
+      }
+    } catch (error: any) {
+      throw error;
     }
   };
 
   if (showCamera) {
     return (
-      <CameraViewComponent 
-        onCapture={handlePhotoCapture}
-        onClose={() => setShowCamera(false)}
-      />
+      <View style={{ flex: 1 }}>
+        <CameraViewComponent 
+          onCapture={handlePhotoCapture}
+          onClose={() => setShowCamera(false)}
+        />
+      </View>
     );
   }
 
@@ -571,14 +603,9 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
         <StatusBar barStyle="dark-content" backgroundColor={theme.tint} />
         
         {/* Header */}
-        <View style={[styles.header, { backgroundColor: theme.tint }]}>
+        <View style={[styles.header, { backgroundColor: theme.tint, paddingTop: insets.top + 10 }]}>
           <Text style={[styles.dateTime, { color: theme.text }]}>{getCurrentDate()}</Text>
           <View style={styles.headerControls}>
-            {isKeyboardVisible && (
-              <TouchableOpacity style={[styles.keyboardDismissButton, { backgroundColor: theme.pastelPink }]} onPress={dismissKeyboard}>
-                <Text style={[styles.keyboardDismissText, { color: theme.text }]}>⌨️ ↓</Text>
-              </TouchableOpacity>
-            )}
             <TouchableOpacity style={styles.headerButton} onPress={handleCancel}>
               <Text style={[styles.headerButtonText, { color: theme.text }]}>✕</Text>
             </TouchableOpacity>
@@ -593,15 +620,12 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
           style={[styles.contentContainer, { backgroundColor: theme.background }]} 
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingBottom: isKeyboardVisible ? 100 : 20 }}
+          contentContainerStyle={{ paddingBottom: 200 + insets.bottom }}
         >
           {/* Compact Journal Header with Category and Privacy */}
           <View style={[styles.journalHeader, { borderBottomColor: theme.pastelPink }]}>
             <View style={styles.journalHeaderTop}>
               <Text style={[styles.journalTitle, { color: theme.text }]}>Journal</Text>
-              <TouchableOpacity onPress={() => setLocation('Current Location')}>
-                <Text style={[styles.addLocationText, { color: theme.tint }]}>Add location?</Text>
-              </TouchableOpacity>
             </View>
             
             <View style={styles.journalHeaderBottom}>
@@ -616,44 +640,13 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
               </TouchableOpacity>
 
               {/* Privacy Toggle */}
-              <View style={styles.compactPrivacyToggle}>
-                <Text style={[styles.compactPrivacyLabel, { color: theme.text }]}>🔒</Text>
-                <TouchableOpacity 
-                  style={[
-                    styles.compactToggleButton, 
-                    { backgroundColor: isProtected ? theme.tint : theme.pastelPink }
-                  ]}
-                  onPress={() => {
-                    if (isProtected) {
-                      handleUnprotectEntry(entryPassword);
-                    } else {
-                      // Show password input modal for protection
-                      Alert.prompt(
-                        'Protect Entry',
-                        'Enter a password to protect this entry:',
-                        [
-                          { text: 'Cancel', style: 'cancel' },
-                          { 
-                            text: 'Protect', 
-                            onPress: (password) => {
-                              if (password && password.length >= 6) {
-                                handleProtectEntry(password, false);
-                              } else {
-                                Alert.alert('Error', 'Password must be at least 6 characters long');
-                              }
-                            }
-                          }
-                        ],
-                        'secure-text'
-                      );
-                    }
-                  }}
-                >
-                  <Text style={[styles.compactToggleText, { color: theme.text }]}>
-                    {isProtected ? 'Protected' : 'Public'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              <IOSStylePrivacyToggle
+                isProtected={isProtected}
+                onProtect={handleProtectEntry}
+                onUnprotect={handleUnprotectEntry}
+                style={styles.privacyToggleContainer}
+                theme={theme}
+              />
             </View>
           </View>
 
@@ -710,52 +703,43 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
             </View>
           )}
 
-          {/* Location Display */}
-          {location && (
-            <View style={[styles.locationContainer, { backgroundColor: theme.pastelPink }]}>
-              <Text style={styles.locationIcon}>📍</Text>
-              <Text style={[styles.locationText, { color: theme.text }]}>{location}</Text>
-            </View>
-          )}
         </ScrollView>
 
-                  {/* Bottom Controls - Hidden when keyboard is visible */}
-          {!isKeyboardVisible && (
-            <View style={[styles.bottomControls, { backgroundColor: theme.pastelBlue }]}>
-              <View style={[styles.mediaControls, { backgroundColor: theme.pastelPink }]}>
-                <TouchableOpacity 
-                  style={[styles.mediaButton, activeTab === 'photos' && { backgroundColor: theme.tint }]}
-                  onPress={() => {
+        {/* Bottom Controls - Only show when keyboard is not visible */}
+        {!isKeyboardVisible && (
+          <View style={[styles.bottomControls, { backgroundColor: theme.pastelBlue, paddingBottom: insets.bottom}]}>
+            <View style={[styles.mediaControls, { backgroundColor: theme.pastelPink,}]}>
+              <TouchableOpacity 
+                style={[styles.mediaButton, activeTab === 'photos' && { backgroundColor: theme.tint }]}
+                onPress={() => {
+                  dismissKeyboard(); // Ensure keyboard is dismissed first
+                  setTimeout(() => {
                     setActiveTab('photos');
                     setShowCamera(true);
-                  }}
-                >
-                  <Text style={styles.mediaButtonIcon}>📷</Text>
-                  <Text style={[styles.mediaButtonText, { color: theme.text }]}>Camera</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[styles.mediaButton, activeTab === 'gallery' && { backgroundColor: theme.tint }]}
-                  onPress={() => {
+                  }, 100);
+                }}
+              >
+                <Text style={styles.mediaButtonIcon}>📷</Text>
+                <Text style={[styles.mediaButtonText, { color: theme.text }]}>Camera</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.mediaButton, activeTab === 'gallery' && { backgroundColor: theme.tint }]}
+                onPress={() => {
+                  dismissKeyboard(); // Ensure keyboard is dismissed first
+                  setTimeout(() => {
                     setActiveTab('gallery');
                     handleImageLibrary();
-                  }}
-                >
-                  <Text style={styles.mediaButtonIcon}>🖼️</Text>
-                  <Text style={[styles.mediaButtonText, { color: theme.text }]}>Gallery</Text>
-                </TouchableOpacity>
-              </View>
+                  }, 100);
+                }}
+              >
+                <Text style={styles.mediaButtonIcon}>🖼️</Text>
+                <Text style={[styles.mediaButtonText, { color: theme.text }]}>Gallery</Text>
+              </TouchableOpacity>
             </View>
-          )}
-
-        {/* Keyboard Toolbar when keyboard is visible */}
-        {isKeyboardVisible && (
-          <View style={[styles.keyboardToolbar, { backgroundColor: theme.pastelPink, borderTopColor: theme.tint }]}>
-            <TouchableOpacity style={[styles.keyboardToolbarButton, { backgroundColor: theme.tint }]} onPress={dismissKeyboard}>
-              <Text style={[styles.keyboardToolbarText, { color: theme.text }]}>Done</Text>
-            </TouchableOpacity>
           </View>
         )}
+
 
         {/* Category Selection Modal */}
         <CategoryModal
@@ -772,14 +756,12 @@ const JournalEntryScreen = ({ navigation, onClose }: JournalEntryScreenProps) =>
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingBottom: 80,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 60,
     paddingBottom: 20,
   },
   dateTime: {
@@ -820,9 +802,12 @@ const styles = StyleSheet.create({
   },
   journalHeader: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 20,
     borderBottomWidth: 1,
-    marginBottom: 8,
+    marginBottom: 16,
+    marginHorizontal: 20,
+    borderRadius: 16,
+    backgroundColor: 'rgba(240, 232, 216, 0.2)',
   },
   journalHeaderTop: {
     flexDirection: 'row',
@@ -862,31 +847,15 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     lineHeight: 18,
   },
-  compactPrivacyToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  compactPrivacyLabel: {
-    fontSize: 16,
-  },
-  compactToggleButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-    minWidth: 70,
-    alignItems: 'center',
-  },
-  compactToggleText: {
-    fontSize: 12,
-    fontFamily: 'Inter-Medium',
-    fontWeight: '600',
+  privacyToggleContainer: {
+    marginVertical: 0,
   },
   textInputContainer: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingTop: 20,
     paddingBottom: 20,
+    marginBottom: 20,
   },
   titleInput: {
     fontSize: 28,
@@ -905,9 +874,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   photoGallery: {
-    marginTop: 24,
-    marginBottom: 24,
+    marginTop: 20,
+    marginBottom: 20,
     paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: 'rgba(240, 232, 216, 0.3)',
+    borderRadius: 16,
+    marginHorizontal: 20,
   },
   photoGalleryTitle: {
     fontSize: 18,
@@ -972,17 +945,21 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   bottomControls: {
-    paddingBottom: 100,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'transparent',
   },
   mediaControls: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 20,
     marginHorizontal: 20,
-    marginTop: 16,
+    marginTop: 12,
     gap: 12,
   },
   mediaButton: {
@@ -1154,12 +1131,8 @@ const styles = StyleSheet.create({
   },
   // Camera Styles
   cameraContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 30,
-    zIndex: 9999,
+    flex: 1,
+    backgroundColor: '#000',
   },
   cameraViewfinder: {
     flex: 1,

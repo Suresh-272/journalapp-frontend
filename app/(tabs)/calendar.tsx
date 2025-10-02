@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   RefreshControl
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Calendar } from 'react-native-calendars';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -22,25 +23,45 @@ import { getJournals } from '@/services/journalService';
 
 const { width } = Dimensions.get('window');
 
-// Warm, earthy color theme
-const journalTheme = {
-  headerBrown: '#E8DCC8',
-  warmBeige: '#FAF7F2',
-  cardBeige: '#F0E8D8',
-  controlBeige: '#E8DCC8',
-  darkBrown: '#5D4E37',
-  mediumBrown: '#8B7355',
-  warmAccent: '#B8956A',
-  navBrown: '#6B5B4F',
-  lightBrown: '#D4C4B0',
-  background: '#FAF7F2',
-  text: '#5D4E37',
-  tint: '#E8DCC8',
-  cardBackground: '#F0E8D8',
-  tabIconDefault: '#8B7355',
-  pastelPink: '#F0E8D8',
-  pastelBlue: '#E8DCC8',
+// Enhanced brown theme matching home screen
+const personalTheme = {
+  primary: '#A9745A', // Caramel Brown - Main ribbon/notebook color
+  secondary: '#8B5E3C', // Chestnut Brown - Gradient highlight
+  background: '#F5EDE1', // Light Beige - Clean background tone
+  cardBackground: '#FFFFFF',
+  accent: '#A9745A', // Caramel Brown accent
+  text: '#4B2E2A', // Espresso Brown - For main text
+  textSecondary: '#8B5E3C', // Chestnut Brown for secondary text
+  border: '#D4C0A8', // Lighter brown border
+  highlight: '#F0E6D7', // Very light warm highlight
+  shadow: 'rgba(75, 46, 42, 0.15)', // Espresso Brown shadow
+  tint: '#D4C0A8',
+  tabIconDefault: '#8B5E3C',
+  pastelPink: '#F0E6D7',
+  pastelBlue: '#D4C0A8',
 };
+
+const professionalTheme = {
+  primary: '#6B4E3D', // Deep professional brown - darker than personal
+  secondary: '#8B6F47', // Rich brown secondary
+  background: '#F8F5F1', // Professional light beige
+  cardBackground: '#FFFFFF',
+  accent: '#9B7B5A', // Professional brown accent
+  text: '#3D2B1F', // Very dark brown for professional text
+  textSecondary: '#6B4E3D', // Deep brown for secondary text
+  border: '#D1C7B8', // Professional light brown border
+  highlight: '#F2EDE5', // Professional light highlight
+  shadow: 'rgba(61, 43, 31, 0.15)', // Professional dark brown shadow
+  success: '#7A8471', // Muted green-brown for completed tasks
+  warning: '#B8956A', // Warm brown for pending tasks
+  tint: '#D1C7B8',
+  tabIconDefault: '#6B4E3D',
+  pastelPink: '#F2EDE5',
+  pastelBlue: '#D1C7B8',
+};
+
+// Use personal theme as default for calendar
+const journalTheme = personalTheme;
 
 // Journal entry interface matching backend model
 interface JournalEntry {
@@ -63,6 +84,7 @@ interface JournalEntry {
 
 export default function CalendarScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [selectedDate, setSelectedDate] = useState('');
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,14 +158,14 @@ export default function CalendarScreen() {
         marked: true,
         customStyles: {
           container: {
-            backgroundColor: hasImages ? journalTheme.pastelPink : journalTheme.lightBrown,
+            backgroundColor: hasImages ? journalTheme.highlight : journalTheme.border,
             borderRadius: 8,
             borderWidth: 1,
-            borderColor: journalTheme.lightBrown,
+            borderColor: journalTheme.border,
             position: 'relative',
           },
           text: {
-            color: journalTheme.darkBrown,
+            color: journalTheme.text,
             fontWeight: 'bold',
             fontSize: 14,
           }
@@ -156,17 +178,17 @@ export default function CalendarScreen() {
       marked[selectedDate] = {
         ...marked[selectedDate],
         selected: true,
-        selectedColor: journalTheme.warmAccent,
+        selectedColor: journalTheme.primary,
         customStyles: {
           ...marked[selectedDate].customStyles,
           container: {
             ...marked[selectedDate].customStyles.container,
-            backgroundColor: journalTheme.warmAccent,
-            borderColor: journalTheme.darkBrown,
+            backgroundColor: journalTheme.primary,
+            borderColor: journalTheme.text,
             borderWidth: 2,
           },
           text: {
-            color: journalTheme.warmBeige,
+            color: '#FFFFFF',
             fontWeight: 'bold',
             fontSize: 14,
           }
@@ -175,16 +197,16 @@ export default function CalendarScreen() {
     } else if (selectedDate) {
       marked[selectedDate] = {
         selected: true,
-        selectedColor: journalTheme.controlBeige,
+        selectedColor: journalTheme.tint,
         customStyles: {
           container: {
-            backgroundColor: journalTheme.controlBeige,
+            backgroundColor: journalTheme.tint,
             borderRadius: 8,
             borderWidth: 1,
-            borderColor: journalTheme.lightBrown,
+            borderColor: journalTheme.border,
           },
           text: {
-            color: journalTheme.darkBrown,
+            color: journalTheme.text,
             fontWeight: 'bold',
             fontSize: 14,
           }
@@ -209,14 +231,14 @@ export default function CalendarScreen() {
       <TouchableOpacity
         style={[
           styles.customDayContainer,
-          hasEntries && { backgroundColor: journalTheme.pastelPink },
-          isSelected && { backgroundColor: journalTheme.warmAccent, borderColor: journalTheme.darkBrown, borderWidth: 2 }
+          hasEntries && { backgroundColor: journalTheme.highlight },
+          isSelected && { backgroundColor: journalTheme.primary, borderColor: journalTheme.text, borderWidth: 2 }
         ]}
         onPress={() => handleDayPress(day)}
       >
         <ThemedText style={[
           styles.customDayText,
-          { color: isSelected ? journalTheme.warmBeige : journalTheme.darkBrown }
+          { color: isSelected ? '#FFFFFF' : journalTheme.text }
         ]}>
           {day.day}
         </ThemedText>
@@ -233,9 +255,9 @@ export default function CalendarScreen() {
         {/* Show entry indicator if no image but has entries */}
         {hasEntries && !firstImage && (
           <View style={styles.dayEntryIndicator}>
-            <View style={[styles.dayEntryDot, { backgroundColor: journalTheme.warmAccent }]} />
+            <View style={[styles.dayEntryDot, { backgroundColor: journalTheme.primary }]} />
             {entriesForDate.length > 1 && (
-              <ThemedText style={[styles.dayEntryCount, { color: journalTheme.darkBrown }]}>
+              <ThemedText style={[styles.dayEntryCount, { color: journalTheme.text }]}>
                 {entriesForDate.length}
               </ThemedText>
             )}
@@ -260,18 +282,18 @@ export default function CalendarScreen() {
     backgroundColor: 'transparent',
     calendarBackground: 'transparent',
     textSectionTitleColor: journalTheme.text,
-    textSectionTitleDisabledColor: journalTheme.mediumBrown,
-    selectedDayBackgroundColor: journalTheme.warmAccent,
-    selectedDayTextColor: journalTheme.warmBeige,
-    todayTextColor: journalTheme.warmAccent,
+    textSectionTitleDisabledColor: journalTheme.textSecondary,
+    selectedDayBackgroundColor: journalTheme.primary,
+    selectedDayTextColor: '#FFFFFF',
+    todayTextColor: journalTheme.primary,
     dayTextColor: journalTheme.text,
-    textDisabledColor: journalTheme.mediumBrown,
-    dotColor: journalTheme.warmAccent,
-    selectedDotColor: journalTheme.warmBeige,
-    arrowColor: journalTheme.warmAccent,
-    disabledArrowColor: journalTheme.mediumBrown,
+    textDisabledColor: journalTheme.textSecondary,
+    dotColor: journalTheme.primary,
+    selectedDotColor: '#FFFFFF',
+    arrowColor: journalTheme.primary,
+    disabledArrowColor: journalTheme.textSecondary,
     monthTextColor: journalTheme.text,
-    indicatorColor: journalTheme.warmAccent,
+    indicatorColor: journalTheme.primary,
     textDayFontFamily: 'Inter-Regular',
     textMonthFontFamily: 'Inter-Bold',
     textDayHeaderFontFamily: 'Inter-Medium',
@@ -321,7 +343,7 @@ export default function CalendarScreen() {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: journalTheme.background }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={journalTheme.warmAccent} />
+          <ActivityIndicator size="large" color={journalTheme.primary} />
           <ThemedText style={[styles.loadingText, { color: journalTheme.text }]}>
             Loading calendar...
           </ThemedText>
@@ -331,9 +353,9 @@ export default function CalendarScreen() {
   }
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: journalTheme.background }]}>
+    <ThemedView style={[styles.container, { backgroundColor: journalTheme.background, paddingTop: insets.top, paddingBottom: 60 + insets.bottom }]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: journalTheme.headerBrown }]}>
+      <View style={[styles.header, { backgroundColor: journalTheme.background }]}>
         <ThemedText type="title" style={[styles.title, { color: journalTheme.text }]}>
           Calendar
         </ThemedText>
@@ -342,12 +364,13 @@ export default function CalendarScreen() {
       <ScrollView 
         style={styles.scrollContainer} 
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 20 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[journalTheme.warmAccent]}
-            tintColor={journalTheme.warmAccent}
+            colors={[journalTheme.primary]}
+            tintColor={journalTheme.primary}
           />
         }
       >
@@ -372,8 +395,8 @@ export default function CalendarScreen() {
             style={styles.calendar}
             dayComponent={({ date, state }) => renderCustomDay(date)}
             renderArrow={(direction) => (
-              <View style={[styles.arrowContainer, { backgroundColor: journalTheme.warmAccent }]}>
-                <ThemedText style={[styles.arrowText, { color: journalTheme.warmBeige }]}>
+              <View style={[styles.arrowContainer, { backgroundColor: journalTheme.primary }]}>
+                <ThemedText style={[styles.arrowText, { color: '#FFFFFF' }]}>
                   {direction === 'left' ? '‹' : '›'}
                 </ThemedText>
               </View>
@@ -411,7 +434,7 @@ export default function CalendarScreen() {
                         <ThemedText type="journalTitle" style={[styles.entryTitle, { color: journalTheme.text }]}>
                           {item.title}
                         </ThemedText>
-                        <ThemedText style={[styles.entryTime, { color: journalTheme.mediumBrown }]}>
+                        <ThemedText style={[styles.entryTime, { color: journalTheme.textSecondary }]}>
                           {new Date(item.createdAt).toLocaleTimeString([], { 
                             hour: '2-digit', 
                             minute: '2-digit' 
@@ -438,8 +461,8 @@ export default function CalendarScreen() {
                               />
                             ))}
                           {item.media.filter(m => m.type === 'image').length > 3 && (
-                            <View style={[styles.moreImagesOverlay, { backgroundColor: journalTheme.warmAccent }]}>
-                              <ThemedText style={[styles.moreImagesText, { color: journalTheme.warmBeige }]}>
+                            <View style={[styles.moreImagesOverlay, { backgroundColor: journalTheme.primary }]}>
+                              <ThemedText style={[styles.moreImagesText, { color: '#FFFFFF' }]}>
                                 +{item.media.filter(m => m.type === 'image').length - 3}
                               </ThemedText>
                             </View>
@@ -453,7 +476,7 @@ export default function CalendarScreen() {
               />
             ) : (
               <GlassCard style={styles.entrySummary}>
-                <ThemedText style={[styles.noEntriesText, { color: journalTheme.mediumBrown }]}>
+                <ThemedText style={[styles.noEntriesText, { color: journalTheme.textSecondary }]}>
                   No journal entries for this date
                 </ThemedText>
               </GlassCard>
@@ -494,7 +517,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingVertical: 15,
-    paddingTop: 60,
+    paddingTop: 20,
   },
   title: {
     fontSize: 28,
@@ -589,7 +612,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: journalTheme.lightBrown,
+    borderColor: journalTheme.border,
     position: 'relative',
     backgroundColor: 'transparent',
   },

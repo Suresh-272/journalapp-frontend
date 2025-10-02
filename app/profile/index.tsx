@@ -12,9 +12,10 @@ import {
   ActivityIndicator,
   Dimensions,
   StatusBar,
-  LinearGradient,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -25,6 +26,8 @@ import api from '../../utils/api';
 import { getJournals } from '@/services/journalService';
 
 const { width, height } = Dimensions.get('window');
+const isTablet = width > 768;
+const isSmallDevice = width < 375;
 
 // Enhanced color theme for the profile screen
 const profileTheme = {
@@ -73,6 +76,7 @@ interface JournalStats {
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const theme = profileTheme;
   
@@ -295,16 +299,32 @@ export default function ProfileScreen() {
   const renderStatCard = (icon: string, value: string | number, label: string, gradient?: boolean) => (
     <View style={[
       styles.statCard, 
-      { backgroundColor: gradient ? theme.cardBackground : theme.pastelPink },
+      { 
+        backgroundColor: gradient ? theme.cardBackground : theme.pastelPink,
+        width: isTablet ? (width - 96) / 2 : (width - 64) / 2
+      },
       gradient && styles.statCardGradient
     ]}>
-      <View style={[styles.statIconContainer, { backgroundColor: gradient ? theme.warmAccent : theme.pastelBlue }]}>
-        <Text style={styles.statIcon}>{icon}</Text>
+      <View style={[styles.statIconContainer, { 
+        backgroundColor: gradient ? theme.warmAccent : theme.pastelBlue,
+        width: isTablet ? 64 : 52,
+        height: isTablet ? 64 : 52,
+        borderRadius: isTablet ? 32 : 26
+      }]}>
+        <Text style={[styles.statIcon, {
+          fontSize: isTablet ? 28 : 24
+        }]}>{icon}</Text>
       </View>
-      <ThemedText style={[styles.statNumber, { color: theme.text }]}>
+      <ThemedText style={[styles.statNumber, { 
+        color: theme.text,
+        fontSize: isTablet ? 30 : 26
+      }]}>
         {value}
       </ThemedText>
-      <ThemedText style={[styles.statLabel, { color: theme.tabIconDefault }]}>
+      <ThemedText style={[styles.statLabel, { 
+        color: theme.tabIconDefault,
+        fontSize: isTablet ? 15 : 13
+      }]}>
         {label}
       </ThemedText>
     </View>
@@ -329,39 +349,73 @@ export default function ProfileScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={theme.background} />
       
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.cardBackground }]}>
+      <View style={[styles.header, { 
+        backgroundColor: theme.cardBackground,
+        paddingTop: insets.top + 16,
+        paddingHorizontal: isTablet ? 32 : 20
+      }]}>
         <TouchableOpacity 
           style={[styles.backButton, { backgroundColor: theme.pastelPink }]}
           onPress={() => router.back()}
         >
-          <IconSymbol name="chevron.left" size={20} color={theme.text} />
+          <Text style={[styles.backButtonText, { color: theme.text }]}>←</Text>
         </TouchableOpacity>
-        <ThemedText style={[styles.headerTitle, { color: theme.text }]}>Profile</ThemedText>
+        <ThemedText style={[styles.headerTitle, { 
+          color: theme.text,
+          fontSize: isTablet ? 32 : 28
+        }]}>Profile</ThemedText>
         <TouchableOpacity 
           style={[styles.settingsButton, { backgroundColor: theme.pastelPink }]}
           onPress={() => Alert.alert('Settings', 'Settings coming soon!')}
         >
-          <IconSymbol name="gear" size={20} color={theme.text} />
+          <Text style={[styles.settingsIcon, { color: theme.text }]}>⚙️</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={[styles.content, {
+          paddingHorizontal: isTablet ? 32 : 20
+        }]} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + 20,
+          maxWidth: isTablet ? 800 : '100%',
+          alignSelf: isTablet ? 'center' : 'stretch',
+          width: isTablet ? '100%' : 'auto'
+        }}
+      >
         {/* Profile Section */}
         <View style={[styles.profileSection, { backgroundColor: theme.cardBackground }]}>
           <View style={styles.profileHeader}>
-            <View style={[styles.profileImageContainer, { backgroundColor: theme.gradientStart }]}>
-              <Text style={styles.profileInitial}>
+            <View style={[styles.profileImageContainer, { 
+              backgroundColor: theme.gradientStart,
+              width: isTablet ? 100 : 80,
+              height: isTablet ? 100 : 80,
+              borderRadius: isTablet ? 50 : 40
+            }]}>
+              <Text style={[styles.profileInitial, {
+                fontSize: isTablet ? 40 : 32
+              }]}>
                 {userData?.name ? userData.name.charAt(0).toUpperCase() : 'U'}
               </Text>
             </View>
             <View style={styles.profileInfo}>
-              <ThemedText style={[styles.profileName, { color: theme.text }]}>
+              <ThemedText style={[styles.profileName, { 
+                color: theme.text,
+                fontSize: isTablet ? 28 : 24
+              }]}>
                 {userData?.name || 'User'}
               </ThemedText>
-              <ThemedText style={[styles.profileEmail, { color: theme.tabIconDefault }]}>
+              <ThemedText style={[styles.profileEmail, { 
+                color: theme.tabIconDefault,
+                fontSize: isTablet ? 18 : 16
+              }]}>
                 {userData?.email || 'user@example.com'}
               </ThemedText>
-              <ThemedText style={[styles.profilePhone, { color: theme.tabIconDefault }]}>
+              <ThemedText style={[styles.profilePhone, { 
+                color: theme.tabIconDefault,
+                fontSize: isTablet ? 16 : 14
+              }]}>
                 {userData?.mobileno || '+91 0000000000'}
               </ThemedText>
             </View>
@@ -371,33 +425,48 @@ export default function ProfileScreen() {
             style={[styles.editProfileButton, { backgroundColor: theme.warmAccent }]}
             onPress={() => setShowEditModal(true)}
           >
-            <IconSymbol name="pencil" size={16} color="#FFFFFF" />
-            <ThemedText style={styles.editProfileText}>Edit Profile</ThemedText>
+            <Text style={[styles.editProfileIcon, { color: '#FFFFFF' }]}>✏️</Text>
+            <ThemedText style={[styles.editProfileText, {
+              fontSize: isTablet ? 18 : 16
+            }]}>Edit Profile</ThemedText>
           </TouchableOpacity>
         </View>
 
         {/* Monthly Goal Progress */}
         <View style={[styles.goalSection, { backgroundColor: theme.cardBackground }]}>
           <View style={styles.goalHeader}>
-            <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>Monthly Goal</ThemedText>
-            <ThemedText style={[styles.goalProgress, { color: theme.warmAccent }]}>
+            <ThemedText style={[styles.sectionTitle, { 
+              color: theme.text,
+              fontSize: isTablet ? 24 : 20
+            }]}>Monthly Goal</ThemedText>
+            <ThemedText style={[styles.goalProgress, { 
+              color: theme.warmAccent,
+              fontSize: isTablet ? 20 : 18
+            }]}>
               {journalStats.thisMonthEntries}/{journalStats.monthlyGoal}
             </ThemedText>
           </View>
           
-          <View style={[styles.progressBar, { backgroundColor: theme.pastelPink }]}>
+          <View style={[styles.progressBar, { 
+            backgroundColor: theme.pastelPink,
+            height: isTablet ? 10 : 8
+          }]}>
             <View 
               style={[
                 styles.progressFill, 
                 { 
                   backgroundColor: theme.warmAccent,
-                  width: `${journalStats.goalProgress}%`
+                  width: `${journalStats.goalProgress}%`,
+                  borderRadius: isTablet ? 5 : 4
                 }
               ]} 
             />
           </View>
           
-          <ThemedText style={[styles.goalText, { color: theme.tabIconDefault }]}>
+          <ThemedText style={[styles.goalText, { 
+            color: theme.tabIconDefault,
+            fontSize: isTablet ? 16 : 14
+          }]}>
             {journalStats.goalProgress >= 100 
               ? "🎉 Goal achieved! Keep up the great work!" 
               : `${journalStats.monthlyGoal - journalStats.thisMonthEntries} more entries to reach your goal`
@@ -407,9 +476,14 @@ export default function ProfileScreen() {
 
         {/* Stats Section */}
         <View style={[styles.statsSection, { backgroundColor: theme.cardBackground }]}>
-          <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>Journaling Stats</ThemedText>
+          <ThemedText style={[styles.sectionTitle, { 
+            color: theme.text,
+            fontSize: isTablet ? 24 : 20
+          }]}>Journaling Stats</ThemedText>
           
-          <View style={styles.statsGrid}>
+          <View style={[styles.statsGrid, {
+            gap: isTablet ? 16 : 12
+          }]}>
             {renderStatCard('📝', journalStats.totalEntries, 'Total Entries', true)}
             {renderStatCard('🔥', journalStats.currentStreak, 'Current Streak', true)}
             {renderStatCard('🏆', journalStats.longestStreak, 'Longest Streak', true)}
@@ -421,23 +495,44 @@ export default function ProfileScreen() {
 
         {/* Weekly Summary */}
         <View style={[styles.weeklySection, { backgroundColor: theme.cardBackground }]}>
-          <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>This Week</ThemedText>
-          <View style={styles.weeklyStats}>
+          <ThemedText style={[styles.sectionTitle, { 
+            color: theme.text,
+            fontSize: isTablet ? 24 : 20
+          }]}>This Week</ThemedText>
+          <View style={[styles.weeklyStats, {
+            gap: isTablet ? 16 : 8
+          }]}>
             <View style={[styles.weeklyCard, { backgroundColor: theme.pastelPink }]}>
-              <Text style={styles.weeklyIcon}>📅</Text>
-              <ThemedText style={[styles.weeklyNumber, { color: theme.text }]}>
+              <Text style={[styles.weeklyIcon, {
+                fontSize: isTablet ? 28 : 24
+              }]}>📅</Text>
+              <ThemedText style={[styles.weeklyNumber, { 
+                color: theme.text,
+                fontSize: isTablet ? 22 : 18
+              }]}>
                 {journalStats.weeklyAverage}
               </ThemedText>
-              <ThemedText style={[styles.weeklyLabel, { color: theme.tabIconDefault }]}>
+              <ThemedText style={[styles.weeklyLabel, { 
+                color: theme.tabIconDefault,
+                fontSize: isTablet ? 14 : 12
+              }]}>
                 Entries This Week
               </ThemedText>
             </View>
             <View style={[styles.weeklyCard, { backgroundColor: theme.pastelPink }]}>
-              <Text style={styles.weeklyIcon}>📈</Text>
-              <ThemedText style={[styles.weeklyNumber, { color: theme.text }]}>
+              <Text style={[styles.weeklyIcon, {
+                fontSize: isTablet ? 28 : 24
+              }]}>📈</Text>
+              <ThemedText style={[styles.weeklyNumber, { 
+                color: theme.text,
+                fontSize: isTablet ? 22 : 18
+              }]}>
                 {journalStats.weeklyAverage > 0 ? 'On Track' : 'Start Writing'}
               </ThemedText>
-              <ThemedText style={[styles.weeklyLabel, { color: theme.tabIconDefault }]}>
+              <ThemedText style={[styles.weeklyLabel, { 
+                color: theme.tabIconDefault,
+                fontSize: isTablet ? 14 : 12
+              }]}>
                 Weekly Status
               </ThemedText>
             </View>
@@ -446,59 +541,163 @@ export default function ProfileScreen() {
 
         {/* Menu Section */}
         <View style={[styles.menuSection, { backgroundColor: theme.cardBackground }]}>
-          <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>Settings</ThemedText>
+          <ThemedText style={[styles.sectionTitle, { 
+            color: theme.text,
+            fontSize: isTablet ? 24 : 20
+          }]}>Settings</ThemedText>
           
-          <TouchableOpacity style={styles.menuItem}>
-            <View style={[styles.menuIconContainer, { backgroundColor: theme.pastelPink }]}>
-              <IconSymbol name="bell" size={20} color={theme.text} />
+          <TouchableOpacity style={[styles.menuItem, { 
+            paddingVertical: isTablet ? 20 : 16
+          }]}>
+            <View style={[styles.menuIconContainer, { 
+              backgroundColor: theme.pastelPink,
+              width: isTablet ? 48 : 40,
+              height: isTablet ? 48 : 40,
+              borderRadius: isTablet ? 24 : 20
+            }]}>
+              <Text style={[styles.menuIcon, { 
+                color: theme.text,
+                fontSize: isTablet ? 24 : 20
+              }]}>🔔</Text>
             </View>
-            <ThemedText style={[styles.menuText, { color: theme.text }]}>Notifications</ThemedText>
-            <IconSymbol name="chevron.right" size={20} color={theme.tabIconDefault} />
+            <ThemedText style={[styles.menuText, { 
+              color: theme.text,
+              fontSize: isTablet ? 18 : 16
+            }]}>Notifications</ThemedText>
+            <Text style={[styles.chevronIcon, { 
+              color: theme.tabIconDefault,
+              fontSize: isTablet ? 24 : 20
+            }]}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <View style={[styles.menuIconContainer, { backgroundColor: theme.pastelPink }]}>
-              <IconSymbol name="lock" size={20} color={theme.text} />
+          <TouchableOpacity style={[styles.menuItem, { 
+            paddingVertical: isTablet ? 20 : 16
+          }]}>
+            <View style={[styles.menuIconContainer, { 
+              backgroundColor: theme.pastelPink,
+              width: isTablet ? 48 : 40,
+              height: isTablet ? 48 : 40,
+              borderRadius: isTablet ? 24 : 20
+            }]}>
+              <Text style={[styles.menuIcon, { 
+                color: theme.text,
+                fontSize: isTablet ? 24 : 20
+              }]}>🔒</Text>
             </View>
-            <ThemedText style={[styles.menuText, { color: theme.text }]}>Privacy & Security</ThemedText>
-            <IconSymbol name="chevron.right" size={20} color={theme.tabIconDefault} />
+            <ThemedText style={[styles.menuText, { 
+              color: theme.text,
+              fontSize: isTablet ? 18 : 16
+            }]}>Privacy & Security</ThemedText>
+            <Text style={[styles.chevronIcon, { 
+              color: theme.tabIconDefault,
+              fontSize: isTablet ? 24 : 20
+            }]}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <View style={[styles.menuIconContainer, { backgroundColor: theme.pastelPink }]}>
-              <IconSymbol name="questionmark.circle" size={20} color={theme.text} />
+          <TouchableOpacity style={[styles.menuItem, { 
+            paddingVertical: isTablet ? 20 : 16
+          }]}>
+            <View style={[styles.menuIconContainer, { 
+              backgroundColor: theme.pastelPink,
+              width: isTablet ? 48 : 40,
+              height: isTablet ? 48 : 40,
+              borderRadius: isTablet ? 24 : 20
+            }]}>
+              <Text style={[styles.menuIcon, { 
+                color: theme.text,
+                fontSize: isTablet ? 24 : 20
+              }]}>❓</Text>
             </View>
-            <ThemedText style={[styles.menuText, { color: theme.text }]}>Help & Support</ThemedText>
-            <IconSymbol name="chevron.right" size={20} color={theme.tabIconDefault} />
+            <ThemedText style={[styles.menuText, { 
+              color: theme.text,
+              fontSize: isTablet ? 18 : 16
+            }]}>Help & Support</ThemedText>
+            <Text style={[styles.chevronIcon, { 
+              color: theme.tabIconDefault,
+              fontSize: isTablet ? 24 : 20
+            }]}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <View style={[styles.menuIconContainer, { backgroundColor: theme.pastelPink }]}>
-              <IconSymbol name="info.circle" size={20} color={theme.text} />
+          <TouchableOpacity style={[styles.menuItem, { 
+            paddingVertical: isTablet ? 20 : 16,
+            borderBottomWidth: 0
+          }]}>
+            <View style={[styles.menuIconContainer, { 
+              backgroundColor: theme.pastelPink,
+              width: isTablet ? 48 : 40,
+              height: isTablet ? 48 : 40,
+              borderRadius: isTablet ? 24 : 20
+            }]}>
+              <Text style={[styles.menuIcon, { 
+                color: theme.text,
+                fontSize: isTablet ? 24 : 20
+              }]}>ℹ️</Text>
             </View>
-            <ThemedText style={[styles.menuText, { color: theme.text }]}>About</ThemedText>
-            <IconSymbol name="chevron.right" size={20} color={theme.tabIconDefault} />
+            <ThemedText style={[styles.menuText, { 
+              color: theme.text,
+              fontSize: isTablet ? 18 : 16
+            }]}>About</ThemedText>
+            <Text style={[styles.chevronIcon, { 
+              color: theme.tabIconDefault,
+              fontSize: isTablet ? 24 : 20
+            }]}>›</Text>
           </TouchableOpacity>
         </View>
 
         {/* Account Actions */}
         <View style={[styles.accountSection, { backgroundColor: theme.cardBackground }]}>
-          <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>Account</ThemedText>
+          <ThemedText style={[styles.sectionTitle, { 
+            color: theme.text,
+            fontSize: isTablet ? 24 : 20
+          }]}>Account</ThemedText>
           
-          <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-            <View style={[styles.menuIconContainer, { backgroundColor: '#FFE5E5' }]}>
-              <IconSymbol name="arrow.right.square" size={20} color="#E74C3C" />
+          <TouchableOpacity style={[styles.menuItem, { 
+            paddingVertical: isTablet ? 20 : 16
+          }]} onPress={handleLogout}>
+            <View style={[styles.menuIconContainer, { 
+              backgroundColor: '#FFE5E5',
+              width: isTablet ? 48 : 40,
+              height: isTablet ? 48 : 40,
+              borderRadius: isTablet ? 24 : 20
+            }]}>
+              <Text style={[styles.menuIcon, { 
+                color: '#E74C3C',
+                fontSize: isTablet ? 24 : 20
+              }]}>🚪</Text>
             </View>
-            <ThemedText style={[styles.menuText, { color: '#E74C3C' }]}>Logout</ThemedText>
-            <IconSymbol name="chevron.right" size={20} color="#E74C3C" />
+            <ThemedText style={[styles.menuText, { 
+              color: '#E74C3C',
+              fontSize: isTablet ? 18 : 16
+            }]}>Logout</ThemedText>
+            <Text style={[styles.chevronIcon, { 
+              color: '#E74C3C',
+              fontSize: isTablet ? 24 : 20
+            }]}>›</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} onPress={handleDeleteAccount}>
-            <View style={[styles.menuIconContainer, { backgroundColor: '#FFE5E5' }]}>
-              <IconSymbol name="trash" size={20} color="#E74C3C" />
+          <TouchableOpacity style={[styles.menuItem, { 
+            paddingVertical: isTablet ? 20 : 16,
+            borderBottomWidth: 0
+          }]} onPress={handleDeleteAccount}>
+            <View style={[styles.menuIconContainer, { 
+              backgroundColor: '#FFE5E5',
+              width: isTablet ? 48 : 40,
+              height: isTablet ? 48 : 40,
+              borderRadius: isTablet ? 24 : 20
+            }]}>
+              <Text style={[styles.menuIcon, { 
+                color: '#E74C3C',
+                fontSize: isTablet ? 24 : 20
+              }]}>🗑️</Text>
             </View>
-            <ThemedText style={[styles.menuText, { color: '#E74C3C' }]}>Delete Account</ThemedText>
-            <IconSymbol name="chevron.right" size={20} color="#E74C3C" />
+            <ThemedText style={[styles.menuText, { 
+              color: '#E74C3C',
+              fontSize: isTablet ? 18 : 16
+            }]}>Delete Account</ThemedText>
+            <Text style={[styles.chevronIcon, { 
+              color: '#E74C3C',
+              fontSize: isTablet ? 24 : 20
+            }]}>›</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -515,7 +714,10 @@ export default function ProfileScreen() {
             <View style={styles.modalHeader}>
               <ThemedText style={[styles.modalTitle, { color: theme.text }]}>Edit Profile</ThemedText>
               <TouchableOpacity onPress={() => setShowEditModal(false)}>
-                <IconSymbol name="xmark" size={24} color={theme.text} />
+                <Text style={[styles.modalCloseIcon, { 
+                  color: theme.text,
+                  fontSize: isTablet ? 28 : 24
+                }]}>✕</Text>
               </TouchableOpacity>
             </View>
 
@@ -586,48 +788,56 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
   },
   loadingText: {
-    fontSize: 16,
+    fontSize: isTablet ? 18 : 16,
     marginTop: 16,
+    textAlign: 'center',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    paddingBottom: isTablet ? 24 : 20,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(139, 111, 71, 0.1)',
+    minHeight: isTablet ? 100 : 80,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: isTablet ? 48 : 40,
+    height: isTablet ? 48 : 40,
+    borderRadius: isTablet ? 24 : 20,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  backButtonText: {
+    fontSize: isTablet ? 28 : 24,
+    fontWeight: '600',
   },
   headerTitle: {
-    fontSize: 28,
     fontFamily: 'DancingScript-Bold',
-    lineHeight: 36,
+    lineHeight: isTablet ? 42 : 36,
+    flex: 1,
+    textAlign: 'center',
   },
   settingsButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: isTablet ? 48 : 40,
+    height: isTablet ? 48 : 40,
+    borderRadius: isTablet ? 24 : 20,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  settingsIcon: {
+    fontSize: isTablet ? 24 : 20,
   },
   content: {
     flex: 1,
-    padding: 20,
   },
   profileSection: {
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: isTablet ? 24 : 20,
+    padding: isTablet ? 28 : 20,
+    marginBottom: isTablet ? 24 : 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -637,15 +847,12 @@ const styles = StyleSheet.create({
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: isTablet ? 28 : 20,
   },
   profileImageContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: isTablet ? 20 : 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -653,7 +860,6 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   profileInitial: {
-    fontSize: 32,
     fontFamily: 'DancingScript-Bold',
     color: '#FFFFFF',
   },
@@ -661,39 +867,38 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileName: {
-    fontSize: 24,
     fontFamily: 'Inter-Bold',
-    marginBottom: 4,
-    lineHeight: 30,
+    marginBottom: isTablet ? 6 : 4,
+    lineHeight: isTablet ? 36 : 30,
   },
   profileEmail: {
-    fontSize: 16,
     fontFamily: 'Inter-Regular',
-    marginBottom: 2,
-    lineHeight: 22,
+    marginBottom: isTablet ? 4 : 2,
+    lineHeight: isTablet ? 26 : 22,
   },
   profilePhone: {
-    fontSize: 14,
     fontFamily: 'Inter-Regular',
-    lineHeight: 20,
+    lineHeight: isTablet ? 24 : 20,
   },
   editProfileButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 25,
-    gap: 8,
+    paddingVertical: isTablet ? 16 : 12,
+    paddingHorizontal: isTablet ? 28 : 20,
+    borderRadius: isTablet ? 30 : 25,
+    gap: isTablet ? 12 : 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,
     elevation: 3,
   },
+  editProfileIcon: {
+    fontSize: isTablet ? 20 : 16,
+  },
   editProfileText: {
     color: '#FFFFFF',
-    fontSize: 16,
     fontFamily: 'Inter-Medium',
     fontWeight: '600',
   },
@@ -754,10 +959,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 12,
   },
   statCard: {
-    width: (width - 52) / 2, // Account for gap and padding
+    width: '48%', // Two columns with some spacing
     padding: 16,
     borderRadius: 16,
     alignItems: 'center',
@@ -861,23 +1065,24 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(139, 111, 71, 0.1)',
   },
   menuIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: isTablet ? 20 : 16,
+  },
+  menuIcon: {
+    textAlign: 'center',
   },
   menuText: {
     flex: 1,
-    fontSize: 16,
     fontFamily: 'Inter-Medium',
-    lineHeight: 22,
+    lineHeight: isTablet ? 26 : 22,
+  },
+  chevronIcon: {
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
@@ -886,9 +1091,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    width: '90%',
-    borderRadius: 20,
-    padding: 20,
+    width: isTablet ? '70%' : '90%',
+    maxWidth: isTablet ? 600 : 400,
+    borderRadius: isTablet ? 24 : 20,
+    padding: isTablet ? 28 : 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
@@ -899,12 +1105,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: isTablet ? 28 : 20,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: isTablet ? 24 : 20,
     fontFamily: 'Inter-Bold',
-    lineHeight: 26,
+    lineHeight: isTablet ? 32 : 26,
+  },
+  modalCloseIcon: {
+    fontWeight: '600',
   },
   inputContainer: {
     marginBottom: 16,

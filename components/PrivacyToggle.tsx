@@ -108,6 +108,7 @@ export const PrivacyToggle: React.FC<PrivacyToggleProps> = ({
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Authenticate to protect this entry',
         fallbackLabel: 'Use password instead',
+        disableDeviceFallback: false,
       });
 
       if (result.success) {
@@ -116,9 +117,12 @@ export const PrivacyToggle: React.FC<PrivacyToggleProps> = ({
         await onProtect(biometricPassword, true);
         setShowModal(false);
         Alert.alert('Success', 'Journal entry protected with biometrics');
+      } else {
+        Alert.alert('Authentication Failed', 'Biometric authentication was not successful');
       }
     } catch (error) {
-      Alert.alert('Error', 'Biometric authentication failed');
+      console.error('Biometric auth error:', error);
+      Alert.alert('Error', 'Biometric authentication failed. Please try again.');
     }
   };
 
@@ -133,7 +137,7 @@ export const PrivacyToggle: React.FC<PrivacyToggleProps> = ({
           {isProtected ? '🔒' : '🔓'}
         </Text>
         <ThemedText style={[styles.toggleText, isProtected && styles.protectedText]}>
-          {isProtected ? 'Protected' : 'Keep Private?'}
+          {isProtected ? 'Protected' : 'Public'}
         </ThemedText>
       </TouchableOpacity>
 
@@ -260,30 +264,33 @@ const styles = StyleSheet.create({
   toggleButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 20,
-    backgroundColor: '#F0F0F0',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: '#F8F9FA',
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: '#E9ECEF',
+    minWidth: 100,
+    justifyContent: 'center',
   },
   protectedButton: {
-    backgroundColor: '#FFF3CD',
-    borderColor: '#FFEAA7',
+    backgroundColor: '#E3F2FD',
+    borderColor: '#2196F3',
   },
   lockIcon: {
-    fontSize: 18,
-    marginRight: 8,
+    fontSize: 16,
+    marginRight: 6,
   },
   protectedIcon: {
-    color: '#856404',
+    color: '#1976D2',
   },
   toggleText: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 13,
+    color: '#6C757D',
+    fontWeight: '500',
   },
   protectedText: {
-    color: '#856404',
+    color: '#1976D2',
     fontWeight: '600',
   },
   modalOverlay: {
@@ -294,12 +301,20 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 20,
+    padding: 24,
     margin: 20,
     maxWidth: 400,
     width: '100%',
     maxHeight: '80%',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
   },
   modalTitle: {
     textAlign: 'center',
@@ -320,10 +335,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     backgroundColor: '#F8F9FA',
-    borderRadius: 12,
+    borderRadius: 16,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: '#E9ECEF',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   biometricIcon: {
     fontSize: 20,
@@ -352,11 +375,19 @@ const styles = StyleSheet.create({
   passwordInput: {
     borderWidth: 1,
     borderColor: '#DDD',
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 12,
+    padding: 14,
     fontSize: 16,
     marginBottom: 16,
     backgroundColor: '#F8F9FA',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   switchContainer: {
     flexDirection: 'row',
@@ -376,26 +407,42 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     backgroundColor: '#F8F9FA',
     marginRight: 8,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   cancelButtonText: {
-    color: '#666',
+    color: '#6C757D',
     fontSize: 16,
     fontWeight: '600',
   },
   confirmButton: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     backgroundColor: '#007AFF',
     marginLeft: 8,
     alignItems: 'center',
+    shadowColor: '#007AFF',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   disabledButton: {
     backgroundColor: '#CCC',

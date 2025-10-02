@@ -1,5 +1,5 @@
 import api from '../utils/api';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 // Get all journal entries for the current user
 export const getJournals = async (page = 1, limit = 10, filters = {}) => {
@@ -63,7 +63,7 @@ export const uploadMedia = async (mediaFile, journalId, caption = '') => {
     // Create form data for file upload
     const formData = new FormData();
     
-    // Get file info
+    // Get file info using legacy API
     const fileInfo = await FileSystem.getInfoAsync(mediaFile.uri);
     if (!fileInfo.exists) {
       throw new Error('File does not exist');
@@ -74,7 +74,7 @@ export const uploadMedia = async (mediaFile, journalId, caption = '') => {
     const fileName = `${Date.now()}.${fileExtension}`;
     
     // Create file object for form data
-    const file = {
+    const fileObject = {
       uri: mediaFile.uri,
       name: fileName,
       type: mediaFile.type === 'photo' ? 'image/jpeg' : 
@@ -82,7 +82,7 @@ export const uploadMedia = async (mediaFile, journalId, caption = '') => {
     };
     
     // Append file and metadata to form data
-    formData.append('file', file);
+    formData.append('file', fileObject);
     formData.append('journalId', journalId);
     if (caption) {
       formData.append('caption', caption);
@@ -154,14 +154,14 @@ export const createJournalWithMedia = async (journalData, mediaFiles = [], isPro
       const mediaFile = mediaFiles[i];
       
       try {
-        // Get file info
+        // Get file info using legacy API
         const fileInfo = await FileSystem.getInfoAsync(mediaFile.uri);
         if (!fileInfo.exists) {
           throw new Error(`File ${i} does not exist`);
         }
         
         // Check file size (limit to 10MB)
-        if (fileInfo.size > 10 * 1024 * 1024) {
+        if (fileInfo.size && fileInfo.size > 10 * 1024 * 1024) {
           throw new Error(`File ${i} is too large. Maximum size is 10MB`);
         }
         
@@ -183,7 +183,7 @@ export const createJournalWithMedia = async (journalData, mediaFiles = [], isPro
         }
         
         // Create file object with proper MIME type
-        const file = {
+        const fileObject = {
           uri: mediaFile.uri,
           name: fileName,
           type: isImage ? 'image/jpeg' : 
@@ -191,7 +191,7 @@ export const createJournalWithMedia = async (journalData, mediaFiles = [], isPro
         };
         
         // Append file to form data
-        formData.append('files', file);
+        formData.append('files', fileObject);
       } catch (fileError) {
         console.error(`Error processing file ${i}:`, fileError);
         throw new Error(`Failed to process file ${i}: ${fileError.message}`);

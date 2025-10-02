@@ -3,7 +3,8 @@ import {
   View,
   StyleSheet,
   Modal,
-  Alert
+  Alert,
+  Platform
 } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
 
@@ -70,6 +71,14 @@ export const UnlockModal: React.FC<UnlockModalProps> = ({
   };
 
   const showPasswordInput = () => {
+    // Use a more reliable approach for Android
+    if (Platform.OS === 'android') {
+      // For Android, we'll use a custom modal instead of Alert.prompt
+      // This will be handled by the parent component
+      onCancel();
+      return;
+    }
+    
     Alert.prompt(
       'Unlock Protected Entry',
       `"${entryTitle}"\n\nEnter the password to unlock this entry:`,
@@ -106,6 +115,7 @@ export const UnlockModal: React.FC<UnlockModalProps> = ({
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Authenticate to unlock this entry',
         fallbackLabel: 'Use password instead',
+        disableDeviceFallback: false,
       });
 
       if (result.success) {
@@ -124,7 +134,8 @@ export const UnlockModal: React.FC<UnlockModalProps> = ({
         setTimeout(() => showPasswordInput(), 500);
       }
     } catch (error) {
-      Alert.alert('Error', 'Biometric authentication failed');
+      console.error('Biometric unlock error:', error);
+      Alert.alert('Error', 'Biometric authentication failed. Please try again.');
       // Show password prompt on error
       setTimeout(() => showPasswordInput(), 500);
     }

@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useColorScheme } from '../../hooks/useColorScheme';
 import { getJournals } from '../../services/journalService';
 import WeeklyMoodGraph from '../../components/WeeklyMoodGraph';
@@ -48,6 +49,7 @@ const weeklyMoodTheme = {
 
 const WeeklyMoodTracker: React.FC = () => {
   const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
   const theme = weeklyMoodTheme;
   
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
@@ -145,8 +147,8 @@ const WeeklyMoodTracker: React.FC = () => {
   }
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: theme.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <ThemedView style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top, paddingBottom: 60 + insets.bottom }]}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
         {/* Header */}
         <View style={styles.header}>
           <ThemedText type="title" style={[styles.title, { color: theme.text }]}>Weekly Mood Analysis</ThemedText>
